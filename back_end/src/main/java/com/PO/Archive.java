@@ -30,6 +30,12 @@ public class Archive {
     @Column(name = "archive_social")
     private Integer archiveSocial;
 
+    @Column(name = "archive_money")
+    private Integer archiveMoney;
+
+    @Column(name = "archive_success_finish")
+    private Integer archiveSuccessFinish;
+
     public ArchiveVO toVO(){
         ArchiveVO vo = new ArchiveVO();
         vo.setArchiveId(archiveId);
@@ -37,6 +43,8 @@ public class Archive {
         vo.setArchiveHealth(archiveHealth);
         vo.setArchiveGame(archiveGame);
         vo.setArchiveSocial(archiveSocial);
+        vo.setArchiveMoney(archiveMoney);
+        vo.setArchiveSuccessFinish(archiveSuccessFinish);
         return vo;
     }
 }

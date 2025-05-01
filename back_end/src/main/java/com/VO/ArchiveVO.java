@@ -13,6 +13,8 @@ public class ArchiveVO {
     private Integer archiveHealth;
     private Integer archiveGame;
     private Integer archiveSocial;
+    private Integer archiveMoney;
+    private Integer archiveSuccessFinish;
     public Archive toPO(){
         Archive archive = new Archive();
         archive.setArchiveId(archiveId);
@@ -20,6 +22,8 @@ public class ArchiveVO {
         archive.setArchiveHealth(archiveHealth);
         archive.setArchiveGame(archiveGame);
         archive.setArchiveSocial(archiveSocial);
+        archive.setArchiveMoney(archiveMoney);
+        archive.setArchiveSuccessFinish(archiveSuccessFinish);
         return archive;
     }
 }
