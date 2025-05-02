@@ -2,7 +2,19 @@ import { createRouter, createWebHashHistory } from "vue-router"
 
 const router = createRouter({
     history: createWebHashHistory(),
-    routes: []
+    routes: [{
+        path: '/', // 添加默认路由
+        component: () => import('../views/user/Home.vue'), // 假设你的主页组件是 Home.vue
+        meta: { title: '主页' }
+    },{
+        path: '/login',
+        component: () => import('../views/user/Login.vue'),
+        meta: { title: '用户登录' }
+    },{
+        path: '/register',
+        component: () => import('../views/user/Register.vue'),
+        meta: { title: '用户注册' }
+    },]
 })
 
 router.beforeEach((to, _, next) => {

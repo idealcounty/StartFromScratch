@@ -7,7 +7,7 @@
           从零开始的呢喃生活
         </h1>
         <div class="subtitle" :class="['fade-in', { animated: showSubtitle }]">
-          我们的南大生活会变成什么样子
+          你将怎样选择你的生活
         </div>
       </div>
 
