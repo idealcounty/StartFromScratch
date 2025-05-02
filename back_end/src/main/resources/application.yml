@@ -18,6 +18,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+dashscope:
+  api-key: sk-9fecf88080a4456f9b52dd0ba03e74c0
+  model-endpoint: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
 
 server:
   port: 8080

@@ -17,8 +17,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResultVO<String> login(@RequestParam("phone") String phone, @RequestParam("password") String password){
-        return ResultVO.buildSuccess(userService.login(phone, password));
+    public ResultVO<String> login(@RequestParam("userName") String userName, @RequestParam("password") String password){
+        return ResultVO.buildSuccess(userService.login(userName, password));
     }
 
     @GetMapping
