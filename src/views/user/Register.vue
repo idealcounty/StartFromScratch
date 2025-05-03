@@ -1,32 +1,86 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
+import { userRegister } from '../../api/user.ts'  // 引入用户注册 API
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+// 注册表单的字段
+const name = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+
+// 表单验证逻辑
+const hasName = computed(() => name.value.trim() !== '')
+const hasPasswordInput = computed(() => password.value.trim() !== '')
+const hasConfirmPasswordInput = computed(() => confirmPassword.value.trim() !== '')
+const isPasswordIdentical = computed(() => hasPasswordInput.value && password.value === confirmPassword.value)
+const registerDisabled = computed(() => {
+  return !(hasName.value && hasPasswordInput.value && hasConfirmPasswordInput.value && isPasswordIdentical.value)
+})
+
+// 处理注册逻辑
+async function handleRegister() {
+  if (registerDisabled.value) {
+    ElMessage({
+      message: '请完善注册信息',
+      type: 'error',
+      center: true
+    })
+    return
+  }
+
+  try {
+    const res = await userRegister({
+      userName: name.value,
+      userPassword: password.value,
+    })
+    console.log(res)
+    if (res.data.code === '000') {
+      ElMessage({
+        message: "注册成功！请登录账号",
+        type: 'success',
+        center: true
+      })
+      router.push({ path: "/login" })
+    } else {
+      ElMessage({
+        message: res.data.msg || '注册失败，请稍后再试',
+        type: 'error',
+        center: true
+      })
+    }
+  } catch (error) {
+    ElMessage({
+      message: '注册失败，请稍后再试',
+      type: 'error',
+      center: true
+    })
+    console.error('注册失败:', error)
+  }
+}
+
+// 跳转到登录
 function JumpToLogin() {
   router.push({ path: '/login' })
 }
 </script>
 
-
 <template>
   <div class="register-container">
-    <!-- 背景渐变和装饰 -->
     <div class="background-gradient"></div>
 
-    <!-- 左侧装饰 -->
     <div class="left-decoration">
       <div class="circle circle-1"></div>
       <div class="circle circle-2"></div>
     </div>
 
-    <!-- 右侧装饰 -->
     <div class="right-decoration">
       <div class="triangle triangle-1"></div>
       <div class="triangle triangle-2"></div>
     </div>
 
-    <!-- 注册表单 -->
     <div class="register-form">
       <div class="register-header">
         <h1>创建账户</h1>
@@ -35,30 +89,31 @@ function JumpToLogin() {
 
       <div class="register-body">
         <div class="input-group">
-          <label for="username">用户名</label>
-          <input type="text" id="username" placeholder="请输入用户名">
+          <label>用户名</label>
+          <input type="text" placeholder="请输入用户名" v-model.trim="name">
         </div>
 
         <div class="input-group">
-          <label for="phone">手机号</label>
-          <input type="tel" id="phone" placeholder="请输入手机号">
+          <label>密码</label>
+          <input type="password" placeholder="请输入密码" v-model.trim="password">
         </div>
 
         <div class="input-group">
-          <label for="password">密码</label>
-          <input type="password" id="password" placeholder="请输入密码">
+          <label>确认密码</label>
+          <input type="password" placeholder="请再次输入密码" v-model.trim="confirmPassword">
         </div>
 
-        <div class="input-group">
-          <label for="confirm-password">确认密码</label>
-          <input type="password" id="confirm-password" placeholder="请再次输入密码">
-        </div>
-
-        <button class="register-button">注册</button>
+        <button
+            class="register-button"
+            :disabled="registerDisabled"
+            @click="handleRegister"
+        >
+          注册
+        </button>
       </div>
 
       <div class="register-footer">
-        <p>已有账户? <a href="#" @click="JumpToLogin">立即登录</a></p>
+        <p>已有账户? <a href="#" @click.prevent="JumpToLogin">立即登录</a></p>
       </div>
     </div>
   </div>
@@ -260,6 +315,12 @@ function JumpToLogin() {
   transform: translateY(0);
 }
 
+.register-button:disabled {
+  background: linear-gradient(90deg, #b0b0b0, #a0a0a0);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* 注册页脚 */
 .register-footer {
   text-align: center;
@@ -295,5 +356,4 @@ function JumpToLogin() {
     display: none;
   }
 }
-
 </style>

@@ -1,34 +1,82 @@
 <script setup lang="ts">
-
+import { ref,computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { userLogin } from '../../api/user.ts'  // 引入登录 API
 
 const router = useRouter()
 
-function JumpToRegister() {
-  router.push({path:'/register'})
+// 表单数据
+const name = ref('')
+const password = ref('')
+
+// 表单验证逻辑
+const isTelEmpty = computed(() => name.value.trim() === '')
+const isPasswordEmpty = computed(() => password.value.trim() === '')
+const loginDisabled = computed(() => isTelEmpty.value || isPasswordEmpty.value)
+
+// 记住密码和忘记密码状态
+const rememberMe = ref(false)
+
+// 登录逻辑
+async function handleLogin() {
+  if (loginDisabled.value) {
+    ElMessage({
+      message: '请输入用户名和密码',
+      type: 'error',
+      center: true
+    })
+    return
+  }
+
+  try {
+    const res = await userLogin(name.value, password.value)
+    console.log(res)
+    if (res.data.code === '000') {
+      ElMessage({
+        message: '登录成功！',
+        type: 'success',
+        center: true
+      })
+      console.log(1)
+      router.push({ path: '/' })  // 跳转到主页或其他页面
+    } else {
+      ElMessage({
+        message: res.data.msg || '登录失败，请检查用户名和密码',
+        type: 'error',
+        center: true
+      })
+    }
+  } catch (error) {
+    ElMessage({
+      message: '登录失败，请检查网络或稍后再试',
+      type: 'error',
+      center: true
+    })
+    console.error('登录错误:', error)
+  }
 }
 
+// 跳转到注册页面
+function JumpToRegister() {
+  router.push({ path: '/register' })
+}
 </script>
-
 
 <template>
   <div class="login-container">
-    <!-- 背景渐变和装饰 -->
     <div class="background-gradient"></div>
 
-    <!-- 左侧装饰 -->
     <div class="left-decoration">
       <div class="circle circle-1"></div>
       <div class="circle circle-2"></div>
     </div>
 
-    <!-- 右侧装饰 -->
     <div class="right-decoration">
       <div class="triangle triangle-1"></div>
       <div class="triangle triangle-2"></div>
     </div>
 
-    <!-- 登录表单 -->
     <div class="login-form">
       <div class="login-header">
         <h1>Welcome</h1>
@@ -37,19 +85,33 @@ function JumpToRegister() {
 
       <div class="login-body">
         <div class="input-group">
-          <label for="username">用户名</label>
-          <input type="text" id="username" placeholder="请输入用户名">
+          <label for="tel">电话号码</label>
+          <input type="tel" id="tel" placeholder="请输入电话号码" v-model.trim="name">
         </div>
 
         <div class="input-group">
           <label for="password">密码</label>
-          <input type="password" id="password" placeholder="请输入密码">
+          <input type="password" id="password" placeholder="请输入密码" v-model.trim="password">
         </div>
 
-        <button class="login-button">登录</button>
+        <div class="remember-forgot">
+          <div class="remember">
+            <input type="checkbox" id="remember-me" v-model="rememberMe">
+            <label for="remember-me">记住我</label>
+          </div>
+          <a href="#" class="forgot-password">忘记密码？</a>
+        </div>
+
+        <button
+            class="login-button"
+            :disabled="loginDisabled"
+            @click="handleLogin"
+        >
+          登录
+        </button>
       </div>
 
-      <div  class="login-footer">
+      <div class="login-footer">
         <p>没有账户? <a @click="JumpToRegister">立即注册</a></p>
       </div>
     </div>
@@ -287,6 +349,12 @@ function JumpToRegister() {
 
 .login-button:active {
   transform: translateY(0);
+}
+
+.login-button:disabled {
+  background: linear-gradient(90deg, #b0b0b0, #a0a0a0);
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* 登录页脚 */

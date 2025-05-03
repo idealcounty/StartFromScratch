@@ -1,28 +1,21 @@
 import {axios} from '../utils/request'
 import {USER_MODULE} from './_prefix'
 
-type LoginInfo = {
-    phone: string,
-    password: string
-}
 
 type RegisterInfo = {
     userId: number,
     userName: string,
-    userPhone: string,
     userPassword: string,
-    userAddress: string,
-    userRole: string,
     userCreateTime: string,
-    userBalance: number,
-    userAvatar: string,
+    userAvatar:string,
 }
 
-export const userLogin = (loginInfo: LoginInfo) => {
-    return axios.post(`${USER_MODULE}/login`, null, {params: loginInfo})
+export const userLogin = (userName: string, password: string) => {
+    console.log(userName, password)
+    return axios.post(`${USER_MODULE}/login`, null, { params: { userName, password } })
         .then(res => {
-            return res
-        })
+            return res;
+        });
 }
 
 // 用户注册
