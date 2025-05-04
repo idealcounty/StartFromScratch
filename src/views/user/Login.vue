@@ -9,7 +9,8 @@ const router = useRouter()
 // 表单数据
 const name = ref('')
 const password = ref('')
-
+const errMsg = ref('')
+const loading = ref(false)
 // 表单验证逻辑
 const isTelEmpty = computed(() => name.value.trim() === '')
 const isPasswordEmpty = computed(() => password.value.trim() === '')
@@ -19,44 +20,26 @@ const loginDisabled = computed(() => isTelEmpty.value || isPasswordEmpty.value)
 const rememberMe = ref(false)
 
 // 登录逻辑
-async function handleLogin() {
-  if (loginDisabled.value) {
-    ElMessage({
-      message: '请输入用户名和密码',
-      type: 'error',
-      center: true
-    })
-    return
-  }
-
-  try {
-    const res = await userLogin(name.value, password.value)
-    console.log(res)
+function handleLogin() {
+  userLogin(name.value, password.value).then(res => {
+    console.log(res.data.code)
     if (res.data.code === '000') {
-      ElMessage({
-        message: '登录成功！',
-        type: 'success',
-        center: true
-      })
-      console.log(1)
-      router.push({ path: '/' })  // 跳转到主页或其他页面
-    } else {
-      ElMessage({
-        message: res.data.msg || '登录失败，请检查用户名和密码',
-        type: 'error',
-        center: true
-      })
+      const token = res.data.result
+      sessionStorage.setItem('token', token)
+      router.push({path: "/"})
+    } else if (res.data.code === '400') {
+      errMsg.value = '登陆失败'
+      password.value = ''
     }
-  } catch (error) {
-    ElMessage({
-      message: '登录失败，请检查网络或稍后再试',
-      type: 'error',
-      center: true
-    })
-    console.error('登录错误:', error)
-  }
+  })
+      .catch(error => {
+        console.error("登录请求失败:", error);
+        errMsg.value = '手机号或密码错误';
+      })
+      .finally(() => {
+        loading.value = false; // 取消加载状态
+      });
 }
-
 // 跳转到注册页面
 function JumpToRegister() {
   router.push({ path: '/register' })

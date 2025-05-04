@@ -16,6 +16,7 @@
         <a href="#home" class="nav-item">首页</a>
         <a href="#load" class="nav-item">读档</a>
         <a href="#achievement" class="nav-item">成就</a>
+        <a href="#restart" class="nav-item">重新开始</a>
       </nav>
     </div>
   </header>
