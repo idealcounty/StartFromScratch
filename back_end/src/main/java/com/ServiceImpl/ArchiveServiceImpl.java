@@ -29,7 +29,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         if (archive != null) {
             throw RE0Exception.archiveNameAlreadyExists();
         }
-        if(archiveVO.getArchiveHealth()+archiveVO.getArchiveScience()+archiveVO.getArchiveGame()+archiveVO.getArchiveSocial()>30){
+        if(archiveVO.getArchiveHealth()+archiveVO.getArchiveScience()+archiveVO.getArchiveGame()+archiveVO.getArchiveSocial()>350){
             throw RE0Exception.attributeValueLimitExceeded();
         }
         Archive newArchive = archiveVO.toPO();
@@ -64,7 +64,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         if (archive == null) {
             throw RE0Exception.archiveNotExists();
         }
-        if(archive.getArchiveHealth()>=15||archive.getArchiveScience()>=15||archive.getArchiveGame()>=15||archive.getArchiveSocial()>=15||archive.getArchiveMoney()>=15){
+        if(archive.getArchiveHealth()>=100||archive.getArchiveScience()>=100||archive.getArchiveGame()>=100||archive.getArchiveSocial()>=100||archive.getArchiveMoney()>=100){
             archive.setArchiveSuccessFinish(0);
             return archive.getArchiveId();
         }

@@ -23,6 +23,6 @@ public class RE0Exception extends RuntimeException {
             return new RE0Exception("存档不存在!");
         }
         public static RE0Exception attributeValueLimitExceeded() {
-            return new RE0Exception("属性值大于30点!");
+            return new RE0Exception("属性值大于可选值!");
         }
 }
