@@ -1,4 +1,45 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { Chatsend } from '../../api/chat';
+
+interface ChatMessage {
+  content: string
+  isAI: boolean
+  timestamp: number
+}
+
+const Message = ref('')
+const messages = ref<ChatMessage[]>([])
+
+function handlechat() {
+  if (!Message.value.trim()) return
+
+  // 添加用户消息
+  messages.value.push({
+    content: Message.value,
+    isAI: false,
+    timestamp: Date.now()
+  })
+
+  const userMessage = Message.value
+  Message.value = ''
+
+  Chatsend({ message: userMessage }).then(res => {
+    // 添加AI回复
+    messages.value.push({
+      content: res.data.reply,
+      isAI: true,
+      timestamp: Date.now()
+    })
+  }).catch(error => {
+    // 错误处理
+    messages.value.push({
+      content: '暂时无法处理您的请求，请稍后再试',
+      isAI: true,
+      timestamp: Date.now()
+    })
+  })
+}
 </script>
 
 <template>
@@ -10,26 +51,26 @@
       </div>
 
       <div class="chat-body">
-        <div class="message ai">
+        <div
+            v-for="(msg, index) in messages"
+            :key="index"
+            class="message"
+            :class="{ 'user': !msg.isAI, 'ai': msg.isAI }"
+        >
           <div class="message-bubble">
-            你好！欢迎来到AI对话世界，请问有什么我可以帮助你的吗？
-          </div>
-        </div>
-        <div class="message user">
-          <div class="message-bubble">
-            你好，我很好奇AI是如何学习的？
-          </div>
-        </div>
-        <div class="message ai">
-          <div class="message-bubble">
-            AI通过大量的数据进行训练，使用复杂的算法不断优化自身。就像人类通过学习和经验增长知识一样。
+            {{ msg.content }}
           </div>
         </div>
       </div>
 
       <div class="chat-input">
-        <input type="text" placeholder="输入你的消息...">
-        <button>发送</button>
+        <input
+            id="Message"
+            placeholder="输入你的消息..."
+            v-model.trim="Message"
+            @keyup.enter="handlechat"
+        >
+        <button @click="handlechat">发送</button>
       </div>
     </div>
   </div>
@@ -79,12 +120,64 @@
 }
 
 .chat-body {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
-  max-height: 400px;
+  height: 60vh;
   overflow-y: auto;
+  padding: 20px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.message {
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+}
+
+.message-bubble {
+  max-width: 75%;
+  padding: 12px 18px;
+  border-radius: 18px;
+  word-break: break-word;
+  position: relative;
+  animation: fadeIn 0.3s ease;
+}
+
+.message.ai .message-bubble {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border-radius: 18px 18px 18px 4px;
+}
+
+.message.user .message-bubble {
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+  margin-left: auto;
+}
+
+/* 滚动条样式 */
+.chat-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message {
