@@ -22,7 +22,7 @@ public class ArchiveController {
         return ResultVO.buildSuccess(archiveService.deleteArchive(archiveId));
     }
     @GetMapping("/user/{userId}")
-    public ResultVO<List<ArchiveVO>> getAllArchive(@PathVariable Integer userId) {
+    public ResultVO<ArchiveVO> getAllArchive(@PathVariable Integer userId) {
         return ResultVO.buildSuccess(archiveService.getAllArchive(userId));
     }
     @GetMapping("/archive/{archiveId}")

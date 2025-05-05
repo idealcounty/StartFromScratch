@@ -49,14 +49,12 @@ public class ArchiveServiceImpl implements ArchiveService {
         return true;
     }
     @Override
-    public List<ArchiveVO> getAllArchive(Integer userId) {
+    public ArchiveVO getAllArchive(Integer userId) {
         User user = userRepository.findByUserId(userId);
         if (user == null) {
             throw RE0Exception.userNotExists();
         }
-        return user.getArchives().stream()
-                .map(Archive::toVO)
-                .collect(Collectors.toList());
+        return user.getArchive().toVO();
     }
     @Override
     public Integer archiveComeToEnd(Integer archiveId){

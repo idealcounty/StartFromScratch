@@ -39,22 +39,21 @@ public class User {
     @Column(name="user_avatar")
     private String userAvatar;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "user_id")
-    private List<Archive> archives = new ArrayList<>();
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "user_id", unique = true)  // 在 Archive 表中 user_id 要加唯一约束
+    private Archive archive;
 
+    // getter & setter for archive
 
-    public UserVO toVO(){
-        UserVO userVO=new UserVO();
+    public UserVO toVO() {
+        UserVO userVO = new UserVO();
         userVO.setUserId(this.userId);
         userVO.setUserName(this.userName);
         userVO.setUserPassword(this.userPassword);
         userVO.setUserCreateTime(this.userCreateTime);
         userVO.setUserAvatar(this.userAvatar);
-        if (this.archives != null) {
-            userVO.setArchiveIds(this.archives.stream()
-                    .map(Archive::getArchiveId)
-                    .collect(Collectors.toList()));
+        if (this.archive != null) {
+            userVO.setArchiveId(this.archive.getArchiveId());
         }
         return userVO;
     }

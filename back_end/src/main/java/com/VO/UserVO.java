@@ -19,23 +19,22 @@ public class UserVO {
     private String userPassword;
     private Date userCreateTime;
     private String userAvatar;
-    private List<Integer> archiveIds = new ArrayList<>();
-    public User toPO(){
-        User user=new User();
+    private Integer archiveId;
+
+    // getter & setter 省略...
+
+    public User toPO() {
+        User user = new User();
         user.setUserId(this.userId);
         user.setUserName(this.userName);
         user.setUserPassword(this.userPassword);
         user.setUserCreateTime(this.userCreateTime);
         user.setUserAvatar(this.userAvatar);
-        if (this.archiveIds != null) {
-            List<Archive> archives = this.archiveIds.stream()
-                    .map(id -> {
-                        Archive archive = new Archive();
-                        archive.setArchiveId(id);
-                        return archive;
-                    })
-                    .collect(Collectors.toList());
-            user.setArchives(archives);
+
+        if (this.archiveId != null) {
+            Archive archive = new Archive();
+            archive.setArchiveId(this.archiveId);
+            user.setArchive(archive);   // 对应你在 User 实体里新增的 one-to-one 字段
         }
         return user;
     }
