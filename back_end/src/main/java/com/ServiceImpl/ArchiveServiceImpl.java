@@ -54,7 +54,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         if (user == null) {
             throw RE0Exception.userNotExists();
         }
-        return user.getArchive().toVO();
+        return archiveRepository.findByArchiveId(user.getArchiveId()).toVO();
     }
     @Override
     public Integer archiveComeToEnd(Integer archiveId){

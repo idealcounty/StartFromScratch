@@ -36,6 +36,9 @@ public class Archive {
     @Column(name = "archive_success_finish")
     private Integer archiveSuccessFinish;
 
+    @Column(name = "user_id")
+    private Integer userId;
+
     public ArchiveVO toVO(){
         ArchiveVO vo = new ArchiveVO();
         vo.setArchiveId(archiveId);
@@ -45,6 +48,7 @@ public class Archive {
         vo.setArchiveSocial(archiveSocial);
         vo.setArchiveMoney(archiveMoney);
         vo.setArchiveSuccessFinish(archiveSuccessFinish);
+        vo.setUserId(userId);
         return vo;
     }
 }

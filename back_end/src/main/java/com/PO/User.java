@@ -39,9 +39,9 @@ public class User {
     @Column(name="user_avatar")
     private String userAvatar;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "user_id", unique = true)  // 在 Archive 表中 user_id 要加唯一约束
-    private Archive archive;
+    @Basic
+    @Column(name="archive_id")
+    private Integer archiveId;
 
     // getter & setter for archive
 
@@ -52,9 +52,7 @@ public class User {
         userVO.setUserPassword(this.userPassword);
         userVO.setUserCreateTime(this.userCreateTime);
         userVO.setUserAvatar(this.userAvatar);
-        if (this.archive != null) {
-            userVO.setArchiveId(this.archive.getArchiveId());
-        }
+        userVO.setArchiveId(archiveId);
         return userVO;
     }
 }

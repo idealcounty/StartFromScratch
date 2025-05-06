@@ -23,8 +23,8 @@ style:
   file:
     path: dataTest/test.jsonl
 dashscope:
-  api-key: sk-9fecf88080a4456f9b52dd0ba03e74c0
+  api-key: sk-7c04c923e64943e880ae10026b74f817
   model-endpoint: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
-
+  app-id: c30392afeaa84b6994a1777192cb1f3a
 server:
   port: 8080
