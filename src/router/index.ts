@@ -18,6 +18,10 @@ const router = createRouter({
         path: '/register',
         component: () => import('../views/user/Register.vue'),
         meta: { title: '用户注册' }
+    },{
+        path: '/init',
+        component: () => import('../views/user/Init.vue'),
+        meta: { title: '初始点数分配' }
     },]
 })
 

@@ -4,3 +4,5 @@ export const API_MODULE = '/api'
 export const USER_MODULE = `${API_MODULE}/users`
 //对话模块
 export const CHAT_MODULE = `${API_MODULE}/chat`
+//存档吗模块
+export const ARCHIVE_MODULE = `${API_MODULE}/archive`
