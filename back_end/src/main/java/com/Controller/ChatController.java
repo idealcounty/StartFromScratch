@@ -3,7 +3,6 @@ package com.Controller;
 import com.Entity.ChatMessage;
 import com.Entity.ChatRequest;
 import com.PO.Archive;
-import com.PO.User;
 import com.Repository.ArchiveRepository;
 import com.Repository.ChatMessageRepository;
 import com.Service.UserService;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -41,57 +39,9 @@ public class ChatController {
     UserService userService;
     @Autowired
     ArchiveRepository archiveRepository;
-
     private UserVO userVO;
     private Archive archive;
-
-    private static final String SYSTEM_PROMPT =
-        "你是“大学生活模拟器”，和用户进行交互，每轮对话需要：\n" +
-        "1. 根据当前存档的属性值（学习、健康、游戏、社交、金钱），生成一个最可能发生的事件。\n" +
-        "2. 提供四个选项（A、B、C、D），每个选项是不同的应对方式。\n" +
-        "3. 告诉用户可以选择选项（输入 A、B、C 或 D），或者自由发挥（输入其他内容）。\n" +
-                "在生成事件和选项时,可以多参考b站,贴吧,小红书等等,用诙谐有趣的语言,幽默地描述事件,例如\n"+
-                "{  \n" +
-                "  \"触发条件\": \"社交>=65, 游戏天赋<=30\",  \n" +
-                "  \"问题\": \"【贴吧求助】暗恋的crush发消息：‘在？帮我砍一刀拼夕夕’…如何优雅反击？\",  \n" +
-                "  \"选项\": [  \n" +
-                "    \"A. 反手甩出PDD提现秘籍：'V我50，教你卡BUG成天选之子'（老哥稳）\",  \n" +
-                "    \"B. 恋爱脑觉醒：秒变舔狗连砍10刀，附赠‘哥哥选我砍得狠吗’茶言茶语\",  \n" +
-                "    \"C. 化身暴躁老哥：'砍nm！跟爹去闲鱼捡垃圾，这才是真·赛博朋克'\",  \n" +
-                "    \"D. 自由发挥（请开始你的表演）\"  \n" +
-                "  ],  \n" +
-                "  \"用户回答\": \"C\",  \n" +
-                "  \"分析结果\": {  \n" +
-                "    \"身体素质\": \"+0（但血压飙升到180）\",  \n" +
-                "    \"科研学习\": \"-1（研究拼夕夕算法浪费2小时）\",  \n" +
-                "    \"社交\": \"+2（贴吧发帖《今天骂了crush，爽！》获封‘反舔斗士’）\",  \n" +
-                "    \"金钱物质\": \"+3（闲鱼倒卖二手路由器净赚200）\",  \n" +
-                "    \"游戏天赋\": \"-1（试图玩《恋与制作人》结果怒删游戏）\",  \n" +
-                "    \"总结\": \"你用贴吧祖安文化成功防御恋爱脑，但从此crush的网易云动态变成‘终究错付了’——建议下次直接分享《拼夕夕经济学论文》，走智性恋路线！\"  \n" +
-                "  }  \n" +
-                "}  "+
-        "在生成事件和选项时，请参考以下 JSONL 文件内容的风格：\n" +
-        "%s\n" +  // 这里会插入 JSONL 文件内容
-        "\n" +
-        "输出格式必须如下：\n" +
-        "1. **事件**：<事件描述>\n" +
-        "2. **选项如下**：\n" +
-        "   A. <选项 A>\n" +
-        "   B. <选项 B>\n" +
-        "   C. <选项 C>\n" +
-        "   D. <选项 D>\n" +
-        "请选择选项（输入 A、B、C 或 D），或者自由发挥。\n" +
-        "\n" +
-        "如果用户选择了选项（A、B、C 或 D），根据用户的选择分析对属性值的修正，并输出修正后的属性值，格式如下：\n" +
-        "你的选择是 <用户选择>。\n" +
-        "属性值修正：\n" +
-        "- <属性名> <+/-值>\n" +
-        "（例如：- 学习 +5\\n- 健康 -3）\n" +
-        "如果用户自由发挥（输入非选项内容），根据用户的回答分析对属性值的修正，并输出修正后的属性值，使用相同格式。\n" +
-        "请严格按照以上格式输出，不要添加额外的说明。";
-
     private String styleContent;
-
     public ChatController(ChatMessageRepository chatMessageRepository) {
         this.chatMessageRepository = chatMessageRepository;
         // 读取 JSONL 文件内容
@@ -120,38 +70,33 @@ private String readStyleFile() {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody ChatRequest request) {
         try {
-            // 初始化 userVO 和 archive
             if (userVO == null) {
                 userVO = userService.getInformation();
                 System.out.println("UserVO initialized: " + userVO);
                 archive = archiveRepository.findByArchiveId(userVO.getArchiveId());
                 if (archive == null) {
-                    // 如果存档不存在，创建一个新的存档并设置初始值
                     archive = new Archive();
                     Random random = new Random();
-                    archive.setArchiveScience(60 + random.nextInt(21)); // 60~80
+                    archive.setArchiveScience(60 + random.nextInt(21));
                     archive.setArchiveHealth(60 + random.nextInt(21));
                     archive.setArchiveGame(60 + random.nextInt(21));
                     archive.setArchiveSocial(60 + random.nextInt(21));
                     archive.setArchiveMoney(60 + random.nextInt(21));
                     archive.setArchiveSuccessFinish(0);
                     archive = archiveRepository.save(archive);
-                    // 更新 userVO 的 archiveId
                     userVO.setArchiveId(archive.getArchiveId());
                 }
                 System.out.println("Archive initialized: " + archive.getArchiveId());
             }
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + apiKey);
 
-            // Get current conversation history
             List<ChatMessage> history = chatMessageRepository.findAllByOrderByIdAsc();
             List<Map<String, String>> messages = new ArrayList<>();
 
             // Add system prompt with style content
-            String formattedSystemPrompt = String.format(SYSTEM_PROMPT, styleContent);
+            String formattedSystemPrompt = String.format(styleContent);
             messages.add(Map.of("role", "system", "content", formattedSystemPrompt));
 
             // Add current archive attribute values
@@ -267,7 +212,6 @@ private String readStyleFile() {
                         }
                     } catch (NumberFormatException e) {
                         System.err.println("Failed to parse change value: " + changeStr + " in line: " + line);
-                        continue; // 跳过无效的行
                     }
                 }
             }

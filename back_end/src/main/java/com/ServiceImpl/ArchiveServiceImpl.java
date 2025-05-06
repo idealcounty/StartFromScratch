@@ -25,6 +25,9 @@ public class ArchiveServiceImpl implements ArchiveService {
     FinalChapterRepository finalChapterRepository;
     @Override
     public Boolean createArchive(ArchiveVO archiveVO){
+        if(archiveVO.getArchiveHealth()+archiveVO.getArchiveScience()+archiveVO.getArchiveGame()+archiveVO.getArchiveSocial()>350){
+            throw RE0Exception.attributeValueLimitExceeded();
+        }
         Archive archive = archiveRepository.findByUserId(archiveVO.getUserId());
         if (archive != null) {
             archive.setArchiveSuccessFinish(archiveVO.getArchiveSuccessFinish());
@@ -34,15 +37,17 @@ public class ArchiveServiceImpl implements ArchiveService {
             archive.setArchiveScience(archiveVO.getArchiveScience());
             archive.setArchiveSocial(archiveVO.getArchiveSocial());
             archiveRepository.save(archive);
+            FinalChapter finalChapter = new FinalChapter();
+            finalChapter.setArchiveId(archive.getArchiveId());
+            finalChapterRepository.save(finalChapter);
         }
-        if(archiveVO.getArchiveHealth()+archiveVO.getArchiveScience()+archiveVO.getArchiveGame()+archiveVO.getArchiveSocial()>350){
-            throw RE0Exception.attributeValueLimitExceeded();
+        else{
+            Archive newArchive = archiveVO.toPO();
+            archiveRepository.save(newArchive);
+            FinalChapter finalChapter = new FinalChapter();
+            finalChapter.setArchiveId(newArchive.getArchiveId());
+            finalChapterRepository.save(finalChapter);
         }
-        Archive newArchive = archiveVO.toPO();
-        archiveRepository.save(newArchive);
-        FinalChapter finalChapter = new FinalChapter();
-        finalChapter.setArchiveId(newArchive.getArchiveId());
-        finalChapterRepository.save(finalChapter);
         return true;
     }
     @Override
