@@ -22,6 +22,10 @@ const router = createRouter({
         path: '/init',
         component: () => import('../views/user/Init.vue'),
         meta: { title: '初始点数分配' }
+    },{
+        path: '/choose',
+        component: () => import('../views/user/Choose.vue'),
+        meta: { title: '初始点数分配' }
     },]
 })
 

@@ -1,5 +1,5 @@
 import {axios} from '../utils/request'
-import {ARCHIVE_MODULE} from './_prefix'
+import {ARCHIVE_MODULE, USER_MODULE} from './_prefix'
 
 
 export type archiveInfo = {
@@ -18,4 +18,10 @@ export const archiveCreate = (archiveinfo:archiveInfo) => {
         .then(res => {
             return res
         })
+}
+
+export const getArchive = (userId:number) => {
+    return axios.get(`${USER_MODULE}/${userId}`).then(res=>{
+        return res
+    })
 }
