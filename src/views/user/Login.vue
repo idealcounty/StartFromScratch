@@ -26,7 +26,7 @@ function handleLogin() {
     if (res.data.code === '000') {
       const token = res.data.result
       sessionStorage.setItem('token', token)
-      router.push({path: "/init"})
+      router.push({path: "/choose"})
     } else if (res.data.code === '400') {
       errMsg.value = '登陆失败'
       password.value = ''
