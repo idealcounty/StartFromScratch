@@ -8,6 +8,7 @@ export type archiveInfo = {
     archiveGame: number,
     archiveSocial: number,
     archiveMoney:number,
+    userId: number,
 }
 
 export const archiveCreate = (archiveinfo:archiveInfo) => {

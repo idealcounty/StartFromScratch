@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import {archiveCreate,archiveInfo} from "../../api/archive.ts";
+import { archiveCreate, archiveInfo } from "../../api/archive.ts";
 import { useRouter } from 'vue-router'
+import { userInfo } from "../../api/user.ts";
 
 const router = useRouter()
 const points = ref<archiveInfo>({
@@ -9,31 +10,31 @@ const points = ref<archiveInfo>({
   archiveSocial: 0,
   archiveGame: 0,
   archiveScience: 0,
-  archiveMoney: 0
+  archiveMoney: 0,
+  userId: 0,
 })
 
 const totalPoints = computed(() =>
     Object.values(points.value).reduce((a, b) => a + b, 0)
 )
 
-const remainingPoints = computed(() => 20 - totalPoints.value)
+const remainingPoints = computed(() => 350 - totalPoints.value)
 
-function increment(category: keyof typeof points.value) {
-  if (points.value[category] < 10 && remainingPoints.value > 0) {
-    points.value[category]++
-  }
-}
-
-function decrement(category: keyof typeof points.value) {
-  if (points.value[category] > 0) {
-    points.value[category]--
-  }
+function handleInput(category: keyof typeof points.value, e: Event) {
+  const inputValue = parseInt((e.target as HTMLInputElement).value, 10) || 0
+  const currentValue = points.value[category]
+  const otherSum = totalPoints.value - currentValue
+  const maxAllowed = Math.min(100, 350 - otherSum)
+  const adjustedValue = Math.min(inputValue, maxAllowed)
+  points.value[category] = Math.max(0, adjustedValue)
 }
 
 function handleConfirm() {
-  archiveCreate(points.value).then(res=>{
-    console.log(res)
-    router.push({path:'/'})
+  userInfo().then(res => {
+    points.value.userId = res.data.result.userId
+    archiveCreate(points.value).then(() => {
+      router.push({ path: '/' })
+    })
   })
 }
 </script>
@@ -48,30 +49,19 @@ function handleConfirm() {
           :key="name"
           class="category-card"
       >
-        <div class="category-header">
-          {{ name.toUpperCase() }}
-          <span class="current-value">{{ value }}</span>
+        <div class="category-header" v-if="name !== 'userId'">
+          {{ name.toUpperCase().replace('ARCHIVE', '') }}
         </div>
 
-        <div class="controls">
-          <button
-              @click="decrement(name as keyof typeof points)"
-              :disabled="value === 0"
-              class="control-btn"
-          >-</button>
-
-          <div class="progress-bar">
-            <div
-                class="progress-fill"
-                :style="{ width: `${(value / 10) * 100}%` }"
-            ></div>
-          </div>
-
-          <button
-              @click="increment(name as keyof typeof points)"
-              :disabled="value === 10 || remainingPoints === 0"
-              class="control-btn"
-          >+</button>
+        <div class="controls" v-if="name !== 'userId'">
+          <input
+              type="number"
+              v-model.number="points[name]"
+              :min="0"
+              :max="100"
+              @input="handleInput(name as keyof typeof points, $event)"
+              class="points-input"
+          >
         </div>
       </div>
     </div>
@@ -127,76 +117,40 @@ h1 {
   padding: 1.5rem;
   border-radius: 15px;
   box-shadow: 0 4px 16px rgba(149, 69, 199, 0.1);
-  transition: transform 0.2s;
-}
-
-.category-card:hover {
-  transform: translateY(-3px);
 }
 
 .category-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
   color: #9c27b0;
   font-weight: 600;
   font-size: 1.1rem;
+  margin-bottom: 1rem;
+  text-align: center;
 }
 
-.current-value {
-  background: #f3e5f5;
-  padding: 0.3rem 0.8rem;
-  border-radius: 8px;
+.points-input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #e91e63;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  text-align: center;
+  transition: border-color 0.3s ease;
 }
 
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.points-input:focus {
+  outline: none;
+  border-color: #9c27b0;
+  box-shadow: 0 0 8px rgba(156, 39, 176, 0.3);
 }
 
-.control-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #e91e63, #9c27b0);
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.2s;
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.control-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.control-btn:not(:disabled):hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
-}
-
-.progress-bar {
-  flex: 1;
-  height: 12px;
-  background: #f3e5f5;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #e91e63, #9c27b0);
-  transition: width 0.3s ease;
-}
-
-
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 .confirm-section {
