@@ -25,9 +25,15 @@ public class ArchiveServiceImpl implements ArchiveService {
     FinalChapterRepository finalChapterRepository;
     @Override
     public Boolean createArchive(ArchiveVO archiveVO){
-        Archive archive = archiveRepository.findByArchiveId(archiveVO.getArchiveId());
+        Archive archive = archiveRepository.findByUserId(archiveVO.getUserId());
         if (archive != null) {
-            throw RE0Exception.archiveNameAlreadyExists();
+            archive.setArchiveSuccessFinish(archiveVO.getArchiveSuccessFinish());
+            archive.setArchiveGame(archiveVO.getArchiveGame());
+            archive.setArchiveMoney(archiveVO.getArchiveMoney());
+            archive.setArchiveHealth(archiveVO.getArchiveHealth());
+            archive.setArchiveScience(archiveVO.getArchiveScience());
+            archive.setArchiveSocial(archiveVO.getArchiveSocial());
+            archiveRepository.save(archive);
         }
         if(archiveVO.getArchiveHealth()+archiveVO.getArchiveScience()+archiveVO.getArchiveGame()+archiveVO.getArchiveSocial()>350){
             throw RE0Exception.attributeValueLimitExceeded();
