@@ -6,18 +6,20 @@ import com.PO.Archive;
 import com.Repository.ArchiveRepository;
 import com.Repository.ChatMessageRepository;
 import com.Service.UserService;
-import com.VO.UserVO;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.dashscope.app.*;
+import com.alibaba.dashscope.exception.ApiException;
+import com.alibaba.dashscope.exception.InputRequiredException;
+import com.alibaba.dashscope.exception.NoApiKeyException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.*;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -26,205 +28,122 @@ public class ChatController {
     @Value("${dashscope.api-key}")
     private String apiKey;
 
-    @Value("${dashscope.model-endpoint}")
-    private String modelEndpoint;
+    @Value("${dashscope.app-id}")
+    private String appId;
 
-    @Value("${style.file.path:dataTest/test.jsonl}")
-    private String styleFilePath="dataTest\\test.jsonl";
-
-    private final RestTemplate restTemplate = new RestTemplate();
     private final ChatMessageRepository chatMessageRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    @Autowired
-    UserService userService;
-    @Autowired
-    ArchiveRepository archiveRepository;
-    private UserVO userVO;
-    private Archive archive;
-    private String styleContent;
-    public ChatController(ChatMessageRepository chatMessageRepository) {
+    private final ArchiveRepository archiveRepository;
+    private final UserService userService;
+
+    public ChatController(ChatMessageRepository chatMessageRepository, ArchiveRepository archiveRepository, UserService userService) {
         this.chatMessageRepository = chatMessageRepository;
-        // 读取 JSONL 文件内容
-        styleContent = readStyleFile();
+        this.archiveRepository = archiveRepository;
+        this.userService = userService;
     }
-
-private String readStyleFile() {
-    if (styleFilePath == null || styleFilePath.trim().isEmpty()) {
-        System.err.println("styleFilePath is null or empty, using default style.");
-        return "未能加载风格文件，请使用默认风格。";
-    }
-
-    StringBuilder content = new StringBuilder();
-    try (BufferedReader reader = new BufferedReader(new FileReader(styleFilePath))) {
-        String line;
-        while ((line = reader.readLine()) != null) {
-            content.append(line).append("\n");
-        }
-    } catch (IOException e) {
-        System.err.println("Failed to read style file: " + e.getMessage());
-        return "未能加载风格文件，请使用默认风格。";
-    }
-    return content.toString();
-}
 
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody ChatRequest request) {
         try {
-            if (userVO == null) {
-                userVO = userService.getInformation();
-                System.out.println("UserVO initialized: " + userVO);
-                archive = archiveRepository.findByArchiveId(userVO.getArchiveId());
-                if (archive == null) {
-                    archive = new Archive();
-                    Random random = new Random();
-                    archive.setArchiveScience(60 + random.nextInt(21));
-                    archive.setArchiveHealth(60 + random.nextInt(21));
-                    archive.setArchiveGame(60 + random.nextInt(21));
-                    archive.setArchiveSocial(60 + random.nextInt(21));
-                    archive.setArchiveMoney(60 + random.nextInt(21));
-                    archive.setArchiveSuccessFinish(0);
-                    archive = archiveRepository.save(archive);
-                    userVO.setArchiveId(archive.getArchiveId());
-                }
-                System.out.println("Archive initialized: " + archive.getArchiveId());
-            }
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + apiKey);
-
-            List<ChatMessage> history = chatMessageRepository.findAllByOrderByIdAsc();
-            List<Map<String, String>> messages = new ArrayList<>();
-
-            // Add system prompt with style content
-            String formattedSystemPrompt = String.format(styleContent);
-            messages.add(Map.of("role", "system", "content", formattedSystemPrompt));
-
-            // Add current archive attribute values
-            String archiveInfo = String.format(
-                "当前存档属性值：学习=%d，健康=%d，游戏=%d，社交=%d，金钱=%d",
-                archive.getArchiveScience(),
-                archive.getArchiveHealth(),
-                archive.getArchiveGame(),
-                archive.getArchiveSocial(),
-                archive.getArchiveMoney()
-            );
-            messages.add(Map.of("role", "user", "content", archiveInfo));
-
-            // If it's the first conversation, initialize the event
-            if (history.isEmpty()) {
-                messages.add(Map.of("role", "user", "content", "开始模拟"));
-            } else {
-                // Add conversation history
-                for (ChatMessage msg : history) {
-                    messages.add(Map.of("role", "user", "content", msg.getUserInput()));
-                    messages.add(Map.of("role", "assistant", "content", msg.getAiResponse()));
-                }
-                // Add current user input
-                messages.add(Map.of("role", "user", "content", request.getMessage()));
+            // 动态获取用户存档
+            Integer userId = userService.getInformation().getUserId();
+            Archive archive = archiveRepository.findByUserId(userId);
+            if (archive == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "用户存档不存在");
+                return ResponseEntity.status(404).body(errorResponse);
             }
 
-            // Construct request body
-            Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "qwen-max");
-            requestBody.put("input", Map.of("messages", messages));
-            requestBody.put("parameters", Map.of("temperature", 0.7, "result_format", "message"));
+            // 获取当前存档的属性值
+            int health = archive.getArchiveHealth();
+            int science = archive.getArchiveScience();
+            int social = archive.getArchiveSocial();
+            int game = archive.getArchiveGame();
+            int money = archive.getArchiveMoney();
 
-            // Debug: Print request body
-            System.out.println("Request body: " + objectMapper.writeValueAsString(requestBody));
+            // 验证用户输入
+            String userInput = request.getMessage();
+            if (userInput == null || userInput.trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "用户输入不能为空");
+                return ResponseEntity.status(400).body(errorResponse);
+            }
 
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                modelEndpoint,
-                new HttpEntity<>(requestBody, headers),
-                String.class
+            // 拼接属性值到用户输入
+            String modifiedInput = String.format(
+                "%s\n当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d",
+                userInput, science, health, game, social, money
             );
-            System.out.println("Raw response: " + response.getBody());
 
-            String aiReply = parseAiResponse(response.getBody());
+            // 构建 ApplicationParam
+            ApplicationParam param = ApplicationParam.builder()
+                    .apiKey(apiKey)
+                    .appId(appId)
+                    .prompt(modifiedInput)
+                    .build();
 
-            // Parse attribute changes and update archive
-            Map<String, Integer> attributeChanges = parseAttributeChanges(aiReply);
-            updateArchive(attributeChanges);
+            // 调用 DashScope API
+            Application application = new Application();
+            ApplicationResult result = application.call(param);
+            String aiReply = result.getOutput().getText();
 
+            // 提取属性值修正并更新 Archive
+            updateArchiveFromReply(aiReply, archive);
+
+            // 保存更新后的 Archive
+            archiveRepository.save(archive);
+
+            // 保存聊天记录
             ChatMessage message = new ChatMessage();
-            message.setUserInput(request.getMessage());
+            message.setUserInput(userInput); // 保存原始输入
             message.setAiResponse(aiReply);
             message.setTimestamp(LocalDateTime.now());
             chatMessageRepository.save(message);
 
-            return ResponseEntity.ok(Map.of("reply", aiReply));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+            // 返回成功响应
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("reply", aiReply);
+            return ResponseEntity.ok(successResponse);
+        } catch (ApiException | NoApiKeyException | InputRequiredException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    // 从模型回复中提取属性值修正并更新 Archive
+    private void updateArchiveFromReply(String reply, Archive archive) {
+        // 定义正则表达式，匹配“属性名 +数字”或“属性名 -数字”
+        String regex = "(学习|健康|游戏|社交|金钱)\\s*([+-]\\d+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(reply);
+
+        while (matcher.find()) {
+            String attribute = matcher.group(1); // 属性名（中文）
+            int change = Integer.parseInt(matcher.group(2)); // 变化值（带+或-）
+
+            // 根据属性名更新 Archive
+            switch (attribute) {
+                case "学习":
+                    archive.setArchiveScience(archive.getArchiveScience() + change);
+                    break;
+                case "健康":
+                    archive.setArchiveHealth(archive.getArchiveHealth() + change);
+                    break;
+                case "游戏":
+                    archive.setArchiveGame(archive.getArchiveGame() + change);
+                    break;
+                case "社交":
+                    archive.setArchiveSocial(archive.getArchiveSocial() + change);
+                    break;
+                case "金钱":
+                    archive.setArchiveMoney(archive.getArchiveMoney() + change);
+                    break;
+            }
         }
     }
 
     @GetMapping("/history")
     public ResponseEntity<List<ChatMessage>> getHistory() {
         return ResponseEntity.ok(chatMessageRepository.findAllByOrderByIdAsc());
-    }
-
-    private String parseAiResponse(String responseBody) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(responseBody);
-            return root.path("output").path("choices").get(0).path("message").path("content").asText("默认回复");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "解析失败";
-        }
-    }
-
-    private Map<String, Integer> parseAttributeChanges(String aiReply) {
-        Map<String, Integer> changes = new HashMap<>();
-        String[] lines = aiReply.split("\n");
-        boolean inChangesSection = false;
-
-        for (String line : lines) {
-            if (line.startsWith("属性值修正：")) {
-                inChangesSection = true;
-                continue;
-            }
-            if (inChangesSection && line.startsWith("- ")) {
-                String[] parts = line.substring(2).trim().split("\\s+");
-                if (parts.length >= 2) {
-                    String attribute = parts[0];
-                    String changeStr = parts[1].replace("+", "").replace("-", "");
-                    try {
-                        int changeValue = Integer.parseInt(changeStr);
-                        // 根据前缀确定正负
-                        if (line.contains("-")) changeValue = -changeValue;
-                        switch (attribute) {
-                            case "学习":
-                                changes.put("archiveScience", changeValue);
-                                break;
-                            case "健康":
-                                changes.put("archiveHealth", changeValue);
-                                break;
-                            case "游戏":
-                                changes.put("archiveGame", changeValue);
-                                break;
-                            case "社交":
-                                changes.put("archiveSocial", changeValue);
-                                break;
-                            case "金钱":
-                                changes.put("archiveMoney", changeValue);
-                                break;
-                        }
-                    } catch (NumberFormatException e) {
-                        System.err.println("Failed to parse change value: " + changeStr + " in line: " + line);
-                    }
-                }
-            }
-        }
-        return changes;
-    }
-
-    private void updateArchive(Map<String, Integer> changes) {
-        archive.setArchiveScience(Math.min(100, Math.max(0, archive.getArchiveScience() + changes.getOrDefault("archiveScience", 0))));
-        archive.setArchiveHealth(Math.min(100, Math.max(0, archive.getArchiveHealth() + changes.getOrDefault("archiveHealth", 0))));
-        archive.setArchiveGame(Math.min(100, Math.max(0, archive.getArchiveGame() + changes.getOrDefault("archiveGame", 0))));
-        archive.setArchiveSocial(Math.min(100, Math.max(0, archive.getArchiveSocial() + changes.getOrDefault("archiveSocial", 0))));
-        archive.setArchiveMoney(Math.min(100, Math.max(0, archive.getArchiveMoney() + changes.getOrDefault("archiveMoney", 0))));
-        archiveRepository.save(archive);
     }
 }

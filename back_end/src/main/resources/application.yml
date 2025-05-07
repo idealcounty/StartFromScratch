@@ -25,6 +25,6 @@ style:
 dashscope:
   api-key: sk-7c04c923e64943e880ae10026b74f817
   model-endpoint: https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation
-  app-id: c30392afeaa84b6994a1777192cb1f3a
+  app-id: 85084d71c7d84d2fa138a5c60e8a9ea6
 server:
   port: 8080
