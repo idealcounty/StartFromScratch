@@ -36,6 +36,7 @@ public class ArchiveServiceImpl implements ArchiveService {
             archive.setArchiveHealth(archiveVO.getArchiveHealth());
             archive.setArchiveScience(archiveVO.getArchiveScience());
             archive.setArchiveSocial(archiveVO.getArchiveSocial());
+            archive.setArchiveSuccessFinish(0);
             archiveRepository.save(archive);
             userRepository.findByUserId(archive.getUserId()).setArchiveId(archiveVO.getUserId());
             userRepository.save(userRepository.findByUserId(archive.getUserId()));
@@ -45,6 +46,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         }
         else{
             Archive newArchive = archiveVO.toPO();
+            newArchive.setArchiveSuccessFinish(0);
             archiveRepository.save(newArchive);
             userRepository.findByUserId(newArchive.getUserId()).setArchiveId(newArchive.getArchiveId());
             userRepository.save(userRepository.findByUserId(newArchive.getUserId()));
