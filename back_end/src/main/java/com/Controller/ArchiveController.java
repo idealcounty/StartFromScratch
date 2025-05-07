@@ -21,7 +21,7 @@ public class ArchiveController {
     public ResultVO<Boolean> deleteArchive(@PathVariable Integer archiveId) {
         return ResultVO.buildSuccess(archiveService.deleteArchive(archiveId));
     }
-    @GetMapping("/user/{userId}")
+    @GetMapping("/archive/all/{userId}")
     public ResultVO<ArchiveVO> getAllArchive(@PathVariable Integer userId) {
         return ResultVO.buildSuccess(archiveService.getAllArchive(userId));
     }

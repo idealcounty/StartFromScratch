@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +35,11 @@ public class ChatController {
     private final ChatMessageRepository chatMessageRepository;
     private final ArchiveRepository archiveRepository;
     private final UserService userService;
-
+            int health = 0;
+            int science = 0;
+            int social = 0;
+            int game = 0;
+            int money = 0;
     public ChatController(ChatMessageRepository chatMessageRepository, ArchiveRepository archiveRepository, UserService userService) {
         this.chatMessageRepository = chatMessageRepository;
         this.archiveRepository = archiveRepository;
@@ -51,12 +56,7 @@ public class ChatController {
                 errorResponse.put("error", "用户存档不存在");
                 return ResponseEntity.status(404).body(errorResponse);
             }
-
-            int health = archive.getArchiveHealth();
-            int science = archive.getArchiveScience();
-            int social = archive.getArchiveSocial();
-            int game = archive.getArchiveGame();
-            int money = archive.getArchiveMoney();
+            getProperties(archive);
 
             String userInput = request.getMessage();
             if (userInput == null || userInput.trim().isEmpty()) {
@@ -81,10 +81,18 @@ public class ChatController {
             String aiReply = result.getOutput().getText();
 
             updateArchiveFromReply(aiReply, archive);
+            if(judge(archive)){
+                ChatRequest finalChapter=new ChatRequest();
+                getProperties(archive);
+                String finalChapterMessage = String.format("当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d,根据目前的属性值,为用户预测一个大学的结局!若某项属性值>50,可以安排一个比较好的结局;" +
+                        "若某项属性值>90,可以安排一个非常好的结局!若某项属性值<10,则只能安排部署很好的结局.", science, health, game, social, money);
+                finalChapter.setMessage(finalChapterMessage);
+
+            }
             archiveRepository.save(archive);
 
             ChatMessage message = new ChatMessage();
-            message.setUserInput(userInput); // 保存原始输入
+            message.setUserInput(userInput);
             message.setAiResponse(aiReply);
             message.setTimestamp(LocalDateTime.now());
             chatMessageRepository.save(message);
@@ -137,6 +145,13 @@ public class ChatController {
             return true;
         }
             return false;
+    }
+    private void getProperties(Archive archive){
+        health = archive.getArchiveHealth();
+        science = archive.getArchiveScience();
+        social = archive.getArchiveSocial();
+        game = archive.getArchiveGame();
+        money = archive.getArchiveMoney();
     }
     @GetMapping("/history")
     public ResponseEntity<List<ChatMessage>> getHistory() {

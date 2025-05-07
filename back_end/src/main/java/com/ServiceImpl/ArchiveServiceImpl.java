@@ -37,6 +37,8 @@ public class ArchiveServiceImpl implements ArchiveService {
             archive.setArchiveScience(archiveVO.getArchiveScience());
             archive.setArchiveSocial(archiveVO.getArchiveSocial());
             archiveRepository.save(archive);
+            userRepository.findByUserId(archive.getUserId()).setArchiveId(archiveVO.getUserId());
+            userRepository.save(userRepository.findByUserId(archive.getUserId()));
             FinalChapter finalChapter = new FinalChapter();
             finalChapter.setArchiveId(archive.getArchiveId());
             finalChapterRepository.save(finalChapter);
@@ -44,6 +46,8 @@ public class ArchiveServiceImpl implements ArchiveService {
         else{
             Archive newArchive = archiveVO.toPO();
             archiveRepository.save(newArchive);
+            userRepository.findByUserId(newArchive.getUserId()).setArchiveId(newArchive.getArchiveId());
+            userRepository.save(userRepository.findByUserId(newArchive.getUserId()));
             FinalChapter finalChapter = new FinalChapter();
             finalChapter.setArchiveId(newArchive.getArchiveId());
             finalChapterRepository.save(finalChapter);
@@ -65,7 +69,7 @@ public class ArchiveServiceImpl implements ArchiveService {
         if (user == null) {
             throw RE0Exception.userNotExists();
         }
-        return archiveRepository.findByArchiveId(user.getArchiveId()).toVO();
+        return archiveRepository.findByUserId(userId).toVO();
     }
     @Override
     public Integer archiveComeToEnd(Integer archiveId){
