@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Chatsend } from '../../api/chat';
-import{userInfo} from "../../api/user.ts";
-import {getArchive} from "../../api/archive.ts";
+import { userInfo } from "../../api/user.ts";
+import { getArchive } from "../../api/archive.ts";
 
 interface ChatMessage {
   content: string
@@ -21,20 +21,21 @@ const points = ref({
 const Message = ref('')
 const messages = ref<ChatMessage[]>([])
 
-function getpoints(){
-  userInfo().then((res)=>{
-    getArchive(res.data.result.userId).then((res)=>{
+function getpoints() {
+  userInfo().then((res) => {
+    getArchive(res.data.result.userId).then((res) => {
       console.log(res)
-      points.value.archiveGame=res.data.result.archiveGame
-      points.value.archiveSocial=res.data.result.archiveSocial
-      points.value.archiveScience=res.data.result.archiveScience
-      points.value.archiveMoney=res.data.result.archiveMoney
-      points.value.archiveHealth=res.data.result.archiveHealth
+      points.value.archiveGame = res.data.result.archiveGame
+      points.value.archiveSocial = res.data.result.archiveSocial
+      points.value.archiveScience = res.data.result.archiveScience
+      points.value.archiveMoney = res.data.result.archiveMoney
+      points.value.archiveHealth = res.data.result.archiveHealth
       console.log(points)
     })
   })
 }
 getpoints();
+
 function handlechat() {
   if (!Message.value.trim()) return
 
@@ -55,7 +56,6 @@ function handlechat() {
       isAI: true,
       timestamp: Date.now()
     })
-
   }).catch(error => {
     // 错误处理
     messages.value.push({
@@ -65,6 +65,73 @@ function handlechat() {
     })
   })
 }
+
+const canvasRef = ref<HTMLCanvasElement | null>(null)
+
+function drawRadarChart() {
+  const canvas = canvasRef.value
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const width = canvas.width
+  const height = canvas.height
+  ctx.clearRect(0, 0, width, height)
+
+  const centerX = width / 2
+  const centerY = height / 2
+  const radius = 90
+  const labels = ['健康', '社交', '娱乐', '学术', '财务']
+  const values = Object.values(points.value)
+
+  ctx.strokeStyle = '#ccc'
+  ctx.lineWidth = 1
+
+  // 绘制网格
+  for (let i = 1; i <= 5; i++) {
+    ctx.beginPath()
+    for (let j = 0; j < 5; j++) {
+      const angle = (Math.PI * 2 / 5) * j - Math.PI / 2
+      const x = centerX + Math.cos(angle) * (radius * i / 5)
+      const y = centerY + Math.sin(angle) * (radius * i / 5)
+      if (j === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.closePath()
+    ctx.stroke()
+  }
+
+  // 绘制数据
+  ctx.strokeStyle = '#9c27b0'
+  ctx.fillStyle = 'rgba(156, 39, 176, 0.4)'
+  ctx.beginPath()
+  for (let i = 0; i < 5; i++) {
+    const angle = (Math.PI * 2 / 5) * i - Math.PI / 2
+    const valueRatio = values[i] / 100
+    const x = centerX + Math.cos(angle) * radius * valueRatio
+    const y = centerY + Math.sin(angle) * radius * valueRatio
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.closePath()
+  ctx.stroke()
+  ctx.fill()
+
+  // 添加维度标签
+  ctx.fillStyle = '#9c27b0'
+  for (let i = 0; i < 5; i++) {
+    const angle = (Math.PI * 2 / 5) * i - Math.PI / 2
+    const labelX = centerX + Math.cos(angle) * (radius + 15)
+    const labelY = centerY + Math.sin(angle) * (radius + 15)
+    ctx.font = 'bold 12px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(labels[i], labelX, labelY)
+  }
+}
+
+onMounted(drawRadarChart)
+watch(points, drawRadarChart, { deep: true })
 </script>
 
 <template>
@@ -101,6 +168,11 @@ function handlechat() {
 
     <div class="stats-container">
       <h3>成长档案</h3>
+
+      <div class="radar-chart-wrapper">
+        <canvas ref="canvasRef" width="250" height="250"></canvas>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-item health">
           <div class="stat-icon">❤️</div>
@@ -222,7 +294,6 @@ function handlechat() {
   margin-left: auto;
 }
 
-/* 滚动条样式 */
 .chat-body::-webkit-scrollbar {
   width: 6px;
 }
@@ -367,14 +438,12 @@ function handlechat() {
   font-weight: bold;
 }
 
-/* 不同分类的颜色强调 */
 .health .stat-icon { color: #ff6b6b; }
 .social .stat-icon { color: #4ecdc4; }
 .game .stat-icon { color: #ff9f43; }
 .science .stat-icon { color: #5f27cd; }
 .money .stat-icon { color: #2ecc71; }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
@@ -384,5 +453,11 @@ function handlechat() {
     order: -1;
     margin-bottom: 20px;
   }
+}
+
+.radar-chart-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
 }
 </style>

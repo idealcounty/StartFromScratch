@@ -1,6 +1,37 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { ref,onMounted } from "vue";
+import { useRouter } from 'vue-router';
+import { getArchive } from "../../api/archive.ts";
+
 const router = useRouter()
+const userId = ref(0)
+const archiveVO = ref()
+const hasArchive = ref(false)
+
+async function getUserInfo() {
+  const { userInfo } = await import('../../api/user.ts')
+  const res = await userInfo()
+  if (res.data.code === '000') {
+    const result = res.data.result
+    userId.value = result.userId
+  } else if (res.data.code === '400') {
+    console.log('未登录')
+  }
+}
+
+onMounted(async () => {
+  await getUserInfo();
+  const res = await getArchive(userId.value);
+  console.log(res)
+  archiveVO.value = res.data.result;
+  console.log(archiveVO.value);
+
+  if (archiveVO.value) {
+    hasArchive.value = true;
+  }
+  console.log(hasArchive.value);
+});
+
 
 function handlerestart(){
   router.push({path:'/init'})
@@ -19,7 +50,7 @@ function handleContinue(){
       <div class="btn-bg"></div>
     </button>
 
-    <button class="menu-btn continue-btn">
+    <button class="menu-btn continue-btn" v-if="hasArchive">
       <span class="btn-text" @click="handleContinue">🎮 继续你的故事</span>
       <div class="btn-bg"></div>
     </button>
