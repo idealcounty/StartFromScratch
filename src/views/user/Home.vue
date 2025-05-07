@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Chatsend } from '../../api/chat';
+import{userInfo} from "../../api/user.ts";
+import {getArchive} from "../../api/archive.ts";
 
 interface ChatMessage {
   content: string
@@ -8,9 +10,31 @@ interface ChatMessage {
   timestamp: number
 }
 
+const points = ref({
+  archiveHealth: 0,
+  archiveSocial: 0,
+  archiveGame: 0,
+  archiveScience: 0,
+  archiveMoney: 0,
+})
+
 const Message = ref('')
 const messages = ref<ChatMessage[]>([])
 
+function getpoints(){
+  userInfo().then((res)=>{
+    getArchive(res.data.result.userId).then((res)=>{
+      console.log(res)
+      points.value.archiveGame=res.data.result.archiveGame
+      points.value.archiveSocial=res.data.result.archiveSocial
+      points.value.archiveScience=res.data.result.archiveScience
+      points.value.archiveMoney=res.data.result.archiveMoney
+      points.value.archiveHealth=res.data.result.archiveHealth
+      console.log(points)
+    })
+  })
+}
+getpoints();
 function handlechat() {
   if (!Message.value.trim()) return
 
@@ -31,6 +55,7 @@ function handlechat() {
       isAI: true,
       timestamp: Date.now()
     })
+
   }).catch(error => {
     // 错误处理
     messages.value.push({
@@ -73,6 +98,47 @@ function handlechat() {
         <button @click="handlechat">发送</button>
       </div>
     </div>
+
+    <div class="stats-container">
+      <h3>成长档案</h3>
+      <div class="stats-grid">
+        <div class="stat-item health">
+          <div class="stat-icon">❤️</div>
+          <div class="stat-info">
+            <span class="stat-label">健康</span>
+            <span class="stat-value">{{ points.archiveHealth }}</span>
+          </div>
+        </div>
+        <div class="stat-item social">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <span class="stat-label">社交</span>
+            <span class="stat-value">{{ points.archiveSocial }}</span>
+          </div>
+        </div>
+        <div class="stat-item game">
+          <div class="stat-icon">🎮</div>
+          <div class="stat-info">
+            <span class="stat-label">娱乐</span>
+            <span class="stat-value">{{ points.archiveGame }}</span>
+          </div>
+        </div>
+        <div class="stat-item science">
+          <div class="stat-icon">🔬</div>
+          <div class="stat-info">
+            <span class="stat-label">学术</span>
+            <span class="stat-value">{{ points.archiveScience }}</span>
+          </div>
+        </div>
+        <div class="stat-item money">
+          <div class="stat-icon">💵</div>
+          <div class="stat-info">
+            <span class="stat-label">财务</span>
+            <span class="stat-value">{{ points.archiveMoney }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -85,12 +151,13 @@ function handlechat() {
 }
 
 .container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(100vh - 80px);
-  padding: 0 20px;
-  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .chat-container {
@@ -241,5 +308,81 @@ function handlechat() {
 
 .chat-input button:hover {
   background: linear-gradient(to right, #5d7df9, #9464d0);
+}
+
+.stats-container {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  color: purple;
+}
+
+.stats-container h3 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-grid {
+  display: grid;
+  gap: 15px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: transform 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 1.8rem;
+  margin-right: 15px;
+  width: 40px;
+  text-align: center;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+/* 不同分类的颜色强调 */
+.health .stat-icon { color: #ff6b6b; }
+.social .stat-icon { color: #4ecdc4; }
+.game .stat-icon { color: #ff9f43; }
+.science .stat-icon { color: #5f27cd; }
+.money .stat-icon { color: #2ecc71; }
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-container {
+    order: -1;
+    margin-bottom: 20px;
+  }
 }
 </style>

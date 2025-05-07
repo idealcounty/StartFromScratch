@@ -34,7 +34,7 @@ function handleLogin() {
   })
       .catch(error => {
         console.error("登录请求失败:", error);
-        errMsg.value = '手机号或密码错误';
+        errMsg.value = '用户名或密码错误';
       })
       .finally(() => {
         loading.value = false; // 取消加载状态
@@ -68,8 +68,8 @@ function JumpToRegister() {
 
       <div class="login-body">
         <div class="input-group">
-          <label for="tel">电话号码</label>
-          <input type="tel" id="tel" placeholder="请输入电话号码" v-model.trim="name">
+          <label for="tel">用户名</label>
+          <input type="tel" id="tel" placeholder="请输入用户名" v-model.trim="name">
         </div>
 
         <div class="input-group">

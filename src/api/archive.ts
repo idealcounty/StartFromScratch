@@ -21,7 +21,7 @@ export const archiveCreate = (archiveinfo:archiveInfo) => {
 }
 
 export const getArchive = (userId:number) => {
-    return axios.get(`${USER_MODULE}/${userId}`).then(res=>{
+    return axios.get(`${ARCHIVE_MODULE}/all/${userId}`).then(res=>{
         return res
     })
 }

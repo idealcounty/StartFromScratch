@@ -13,8 +13,6 @@
 
       <!-- 导航栏（可扩展） -->
       <nav class="header-nav" v-if="showNav">
-        <a href="#home" class="nav-item">回到对话</a>
-        <a href="#achievement" class="nav-item">成就</a>
         <a href="#init" class="nav-item">重新开始</a>
       </nav>
     </div>
