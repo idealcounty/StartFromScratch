@@ -78,7 +78,7 @@ public class ChatController {
                 .apiKey(apiKey)
                 .appId(appId)
                 .prompt(modifiedInput)
-                    .ragOptions(RagOptions.builder().pipelineIds(List.of("file_b75bbb2b24244ab49424d7cca40e168f_11940386", "file_a291659172454c948a1f0aae6c591ad8_11940386")).build())
+                    .ragOptions(RagOptions.builder().pipelineIds(List.of("file_b75bbb2b24244ab49424d7cca40e168f_11940386", "file_a291659172454c948a1f0aae6c591ad8_11940386","file_5e20501991c2415494e7a454431f1204_11940386")).build())
                     .build();
 
 
