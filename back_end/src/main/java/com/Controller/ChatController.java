@@ -44,7 +44,6 @@ public class ChatController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody ChatRequest request) {
         try {
-            // 动态获取用户存档
             Integer userId = userService.getInformation().getUserId();
             Archive archive = archiveRepository.findByUserId(userId);
             if (archive == null) {
@@ -53,14 +52,12 @@ public class ChatController {
                 return ResponseEntity.status(404).body(errorResponse);
             }
 
-            // 获取当前存档的属性值
             int health = archive.getArchiveHealth();
             int science = archive.getArchiveScience();
             int social = archive.getArchiveSocial();
             int game = archive.getArchiveGame();
             int money = archive.getArchiveMoney();
 
-            // 验证用户输入
             String userInput = request.getMessage();
             if (userInput == null || userInput.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
@@ -68,40 +65,33 @@ public class ChatController {
                 return ResponseEntity.status(400).body(errorResponse);
             }
 
-            // 拼接属性值到用户输入
             String modifiedInput = String.format(
                 "%s\n当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d",
                 userInput, science, health, game, social, money
             );
 
-            // 构建 ApplicationParam
             ApplicationParam param = ApplicationParam.builder()
                     .apiKey(apiKey)
                     .appId(appId)
                     .prompt(modifiedInput)
                     .build();
 
-            // 调用 DashScope API
             Application application = new Application();
             ApplicationResult result = application.call(param);
             String aiReply = result.getOutput().getText();
 
-            // 提取属性值修正并更新 Archive
             updateArchiveFromReply(aiReply, archive);
-
-            // 保存更新后的 Archive
             archiveRepository.save(archive);
 
-            // 保存聊天记录
             ChatMessage message = new ChatMessage();
             message.setUserInput(userInput); // 保存原始输入
             message.setAiResponse(aiReply);
             message.setTimestamp(LocalDateTime.now());
             chatMessageRepository.save(message);
 
-            // 返回成功响应
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put("reply", aiReply);
+
             return ResponseEntity.ok(successResponse);
         } catch (ApiException | NoApiKeyException | InputRequiredException e) {
             Map<String, Object> errorResponse = new HashMap<>();
@@ -110,18 +100,14 @@ public class ChatController {
         }
     }
 
-    // 从模型回复中提取属性值修正并更新 Archive
     private void updateArchiveFromReply(String reply, Archive archive) {
-        // 定义正则表达式，匹配“属性名 +数字”或“属性名 -数字”
         String regex = "(学习|健康|游戏|社交|金钱)\\s*([+-]\\d+)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(reply);
 
         while (matcher.find()) {
-            String attribute = matcher.group(1); // 属性名（中文）
-            int change = Integer.parseInt(matcher.group(2)); // 变化值（带+或-）
-
-            // 根据属性名更新 Archive
+            String attribute = matcher.group(1);
+            int change = Integer.parseInt(matcher.group(2));
             switch (attribute) {
                 case "学习":
                     archive.setArchiveScience(archive.getArchiveScience() + change);
@@ -141,7 +127,17 @@ public class ChatController {
             }
         }
     }
-
+    private boolean judge(Archive archive){
+        if(archive.getArchiveHealth()>=100||archive.getArchiveScience()>=100
+                ||archive.getArchiveSocial()>=100||archive.getArchiveGame()>=100||
+                archive.getArchiveMoney()>=100||archive.getArchiveHealth()<=0||archive.getArchiveScience()<=0
+                ||archive.getArchiveGame()<=0||archive.getArchiveMoney()<=0||archive.getArchiveSocial()<=0)
+        {
+            archive.setArchiveSuccessFinish(1);
+            return true;
+        }
+            return false;
+    }
     @GetMapping("/history")
     public ResponseEntity<List<ChatMessage>> getHistory() {
         return ResponseEntity.ok(chatMessageRepository.findAllByOrderByIdAsc());
