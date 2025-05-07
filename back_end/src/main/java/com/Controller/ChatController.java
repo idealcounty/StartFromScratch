@@ -78,9 +78,8 @@ public class ChatController {
                 .apiKey(apiKey)
                 .appId(appId)
                 .prompt(modifiedInput)
-                    .ragOptions(RagOptions.builder().pipelineIds(List.of("file_b75bbb2b24244ab49424d7cca40e168f_11940386", "file_a291659172454c948a1f0aae6c591ad8_11940386","file_5e20501991c2415494e7a454431f1204_11940386")).build())
-                    .build();
-
+                .ragOptions(RagOptions.builder().pipelineIds(List.of("file_b75bbb2b24244ab49424d7cca40e168f_11940386", "file_a291659172454c948a1f0aae6c591ad8_11940386", "file_5e20501991c2415494e7a454431f1204_11940386")).build())
+                .build();
 
             Application application = new Application();
             ApplicationResult result = application.call(param);
@@ -106,7 +105,7 @@ public class ChatController {
                     "- 若某项属性值 > 90，安排一个非常好的结局（例如顶尖大学毕业、行业领袖）。\n" +
                     "- 若某项属性值 > 50，安排一个比较好的结局（例如顺利毕业、稳定工作）。\n" +
                     "- 若某项属性值 < 10，安排一个不太好的结局（例如辍学、经济困难）。\n" +
-                    "- 综合考虑所有属性，生成一个详细的结局描述。",
+                    "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过500字符。",
                     science, health, game, social, money
                 );
 
@@ -163,6 +162,84 @@ public class ChatController {
         }
     }
 
+    @PostMapping("/end")
+    public ResponseEntity<?> endConversation() {
+        try {
+            // Validate user and archive
+            Integer userId = userService.getInformation().getUserId();
+            Archive archive = archiveRepository.findByUserId(userId);
+            if (archive == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "用户存档不存在");
+                return ResponseEntity.status(404).body(errorResponse);
+            }
+
+            // Check if archive is already completed
+            Integer successFinish = archive.getArchiveSuccessFinish();
+            if (successFinish != null && successFinish == 1) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "存档已完成，无需再次生成结局");
+                return ResponseEntity.status(400).body(errorResponse);
+            }
+
+            // Get current properties
+            getProperties(archive);
+
+            // Mark archive as complete
+            archive.setArchiveSuccessFinish(1);
+
+            // Construct final chapter prompt
+            String finalChapterMessage = String.format(
+                "当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d\n" +
+                "用户选择结束对话，请根据目前的属性值，为用户预测一个大学的结局！\n" +
+                "规则：\n" +
+                "- 若某项属性值 > 90，安排一个非常好的结局（例如顶尖大学毕业、行业领袖）。\n" +
+                "- 若某项属性值 > 50，安排一个比较好的结局（例如顺利毕业、稳定工作）。\n" +
+                "- 若某项属性值 < 10，安排一个不太好的结局（例如辍学、经济困难）。\n" +
+                "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过500字符。",
+                science, health, game, social, money
+            );
+
+            // Call DashScope API for final chapter
+            ApplicationParam finalChapterParam = ApplicationParam.builder()
+                .apiKey(apiKey)
+                .appId(appId)
+                .prompt(finalChapterMessage)
+                .build();
+
+            Application finalChapterApplication = new Application();
+            ApplicationResult finalChapterResult = finalChapterApplication.call(finalChapterParam);
+            String finalChapterAiReply = finalChapterResult.getOutput().getText();
+
+            // Save final chapter outcome to archive
+            archive.setFinalOutcome(finalChapterAiReply);
+
+            // Save final chapter message and response to chat history
+            ChatMessage finalChapterMessageRecord = new ChatMessage();
+            finalChapterMessageRecord.setUserInput("用户结束对话，触发大学结局预测");
+            finalChapterMessageRecord.setAiResponse(finalChapterAiReply);
+            finalChapterMessageRecord.setTimestamp(LocalDateTime.now());
+            chatMessageRepository.save(finalChapterMessageRecord);
+
+            // Save updated archive
+            archiveRepository.save(archive);
+
+            // Prepare response
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("finalOutcome", finalChapterAiReply);
+
+            return ResponseEntity.ok(successResponse);
+        } catch (ApiException | NoApiKeyException | InputRequiredException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "DashScope API error: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "服务器错误: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
     private void updateArchiveFromReply(String reply, Archive archive) {
         String regex = "(学习|健康|游戏|社交|金钱)\\s*([+-]\\d+)";
         Pattern pattern = Pattern.compile(regex);
@@ -192,18 +269,16 @@ public class ChatController {
     }
 
     private boolean judge(Archive archive) {
-
-        if(archive.getArchiveHealth() >= 90 || archive.getArchiveScience() >= 90 ||
-               archive.getArchiveSocial() >= 90 || archive.getArchiveGame() >= 90 ||
-               archive.getArchiveMoney() >= 90 ||
-               archive.getArchiveHealth() <= 10 || archive.getArchiveScience() <= 10 ||
-               archive.getArchiveSocial() <= 10 || archive.getArchiveGame() <= 10 ||
-               archive.getArchiveMoney() <= 10){
+        if (archive.getArchiveHealth() >= 90 || archive.getArchiveScience() >= 90 ||
+            archive.getArchiveSocial() >= 90 || archive.getArchiveGame() >= 90 ||
+            archive.getArchiveMoney() >= 90 ||
+            archive.getArchiveHealth() <= 10 || archive.getArchiveScience() <= 10 ||
+            archive.getArchiveSocial() <= 10 || archive.getArchiveGame() <= 10 ||
+            archive.getArchiveMoney() <= 10) {
             archive.setArchiveSuccessFinish(1);
             return true;
         }
         return false;
-
     }
 
     private void getProperties(Archive archive) {

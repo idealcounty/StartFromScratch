@@ -39,7 +39,7 @@ public class Archive {
     @Column(name = "user_id")
     private Integer userId;
 
-    @Column(name = "final_outcome")
+    @Column(name = "final_outcome",length = 10000)
     private String finalOutcome;
 
     public ArchiveVO toVO(){
