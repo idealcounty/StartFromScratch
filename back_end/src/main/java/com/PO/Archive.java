@@ -39,6 +39,9 @@ public class Archive {
     @Column(name = "user_id")
     private Integer userId;
 
+    @Column(name = "final_outcome")
+    private String finalOutcome;
+
     public ArchiveVO toVO(){
         ArchiveVO vo = new ArchiveVO();
         vo.setArchiveId(archiveId);
@@ -49,6 +52,7 @@ public class Archive {
         vo.setArchiveMoney(archiveMoney);
         vo.setArchiveSuccessFinish(archiveSuccessFinish);
         vo.setUserId(userId);
+        vo.setFinalOutcome(finalOutcome);
         return vo;
     }
 }

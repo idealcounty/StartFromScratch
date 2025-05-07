@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,11 +34,12 @@ public class ChatController {
     private final ChatMessageRepository chatMessageRepository;
     private final ArchiveRepository archiveRepository;
     private final UserService userService;
-            int health = 0;
-            int science = 0;
-            int social = 0;
-            int game = 0;
-            int money = 0;
+    private int health = 0;
+    private int science = 0;
+    private int social = 0;
+    private int game = 0;
+    private int money = 0;
+
     public ChatController(ChatMessageRepository chatMessageRepository, ArchiveRepository archiveRepository, UserService userService) {
         this.chatMessageRepository = chatMessageRepository;
         this.archiveRepository = archiveRepository;
@@ -49,6 +49,7 @@ public class ChatController {
     @PostMapping("/send")
     public ResponseEntity<?> sendMessage(@RequestBody ChatRequest request) {
         try {
+            // Validate user and archive
             Integer userId = userService.getInformation().getUserId();
             Archive archive = archiveRepository.findByUserId(userId);
             if (archive == null) {
@@ -58,6 +59,7 @@ public class ChatController {
             }
             getProperties(archive);
 
+            // Validate user input
             String userInput = request.getMessage();
             if (userInput == null || userInput.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
@@ -65,45 +67,96 @@ public class ChatController {
                 return ResponseEntity.status(400).body(errorResponse);
             }
 
+            // Construct prompt with current attributes
             String modifiedInput = String.format(
                 "%s\n当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d",
                 userInput, science, health, game, social, money
             );
 
+            // Call DashScope API for regular response
             ApplicationParam param = ApplicationParam.builder()
-                    .apiKey(apiKey)
-                    .appId(appId)
-                    .prompt(modifiedInput)
-                    .build();
+                .apiKey(apiKey)
+                .appId(appId)
+                .prompt(modifiedInput)
+                .build();
 
             Application application = new Application();
             ApplicationResult result = application.call(param);
             String aiReply = result.getOutput().getText();
 
+            // Update archive based on regular reply
             updateArchiveFromReply(aiReply, archive);
-            if(judge(archive)){
-                ChatRequest finalChapter=new ChatRequest();
-                getProperties(archive);
-                String finalChapterMessage = String.format("当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d,根据目前的属性值,为用户预测一个大学的结局!若某项属性值>50,可以安排一个比较好的结局;" +
-                        "若某项属性值>90,可以安排一个非常好的结局!若某项属性值<10,则只能安排部署很好的结局.", science, health, game, social, money);
-                finalChapter.setMessage(finalChapterMessage);
 
+            // Prepare response
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("reply", aiReply);
+
+            // Check for final chapter trigger
+            if (judge(archive)) {
+                // Mark archive as complete
+                archive.setArchiveSuccessFinish(1);
+
+                // Construct final chapter prompt
+                String finalChapterMessage = String.format(
+                    "当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d\n" +
+                    "根据目前的属性值，为用户预测一个大学的结局！\n" +
+                    "规则：\n" +
+                    "- 若某项属性值 > 90，安排一个非常好的结局（例如顶尖大学毕业、行业领袖）。\n" +
+                    "- 若某项属性值 > 50，安排一个比较好的结局（例如顺利毕业、稳定工作）。\n" +
+                    "- 若某项属性值 < 10，安排一个不太好的结局（例如辍学、经济困难）。\n" +
+                    "- 综合考虑所有属性，生成一个详细的结局描述。",
+                    science, health, game, social, money
+                );
+
+                // Call DashScope API for final chapter
+                ApplicationParam finalChapterParam = ApplicationParam.builder()
+                    .apiKey(apiKey)
+                    .appId(appId)
+                    .prompt(finalChapterMessage)
+                    .build();
+
+                try {
+                    Application finalChapterApplication = new Application();
+                    ApplicationResult finalChapterResult = finalChapterApplication.call(finalChapterParam);
+                    String finalChapterAiReply = finalChapterResult.getOutput().getText();
+
+                    // Save final chapter outcome to archive
+                    archive.setFinalOutcome(finalChapterAiReply);
+
+                    // Save final chapter message and response to chat history
+                    ChatMessage finalChapterMessageRecord = new ChatMessage();
+                    finalChapterMessageRecord.setUserInput("触发大学结局预测");
+                    finalChapterMessageRecord.setAiResponse(finalChapterAiReply);
+                    finalChapterMessageRecord.setTimestamp(LocalDateTime.now());
+                    chatMessageRepository.save(finalChapterMessageRecord);
+
+                    // Include final chapter reply in response
+                    successResponse.put("finalOutcome", finalChapterAiReply);
+                } catch (ApiException | NoApiKeyException | InputRequiredException e) {
+                    // Log error but don't fail the entire request
+                    System.err.println("Final chapter API error: " + e.getMessage());
+                    successResponse.put("finalOutcomeError", "无法生成大学结局：" + e.getMessage());
+                }
             }
+
+            // Save updated archive
             archiveRepository.save(archive);
 
+            // Save regular message to chat history
             ChatMessage message = new ChatMessage();
             message.setUserInput(userInput);
             message.setAiResponse(aiReply);
             message.setTimestamp(LocalDateTime.now());
             chatMessageRepository.save(message);
 
-            Map<String, Object> successResponse = new HashMap<>();
-            successResponse.put("reply", aiReply);
-
             return ResponseEntity.ok(successResponse);
         } catch (ApiException | NoApiKeyException | InputRequiredException e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
+            errorResponse.put("error", "DashScope API error: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "服务器错误: " + e.getMessage());
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
@@ -135,24 +188,27 @@ public class ChatController {
             }
         }
     }
-    private boolean judge(Archive archive){
-        if(archive.getArchiveHealth()>=100||archive.getArchiveScience()>=100
-                ||archive.getArchiveSocial()>=100||archive.getArchiveGame()>=100||
-                archive.getArchiveMoney()>=100||archive.getArchiveHealth()<=0||archive.getArchiveScience()<=0
-                ||archive.getArchiveGame()<=0||archive.getArchiveMoney()<=0||archive.getArchiveSocial()<=0)
-        {
-            archive.setArchiveSuccessFinish(1);
-            return true;
-        }
-            return false;
+
+    private boolean judge(Archive archive) {
+        // Align with finalChapterMessage thresholds (>90, >50, <10)
+        // Trigger if any attribute is extreme or meets outcome conditions
+        return archive.getArchiveHealth() >= 90 || archive.getArchiveScience() >= 90 ||
+               archive.getArchiveSocial() >= 90 || archive.getArchiveGame() >= 90 ||
+               archive.getArchiveMoney() >= 90 ||
+               archive.getArchiveHealth() <= 10 || archive.getArchiveScience() <= 10 ||
+               archive.getArchiveSocial() <= 10 || archive.getArchiveGame() <= 10 ||
+               archive.getArchiveMoney() <= 10 ||
+               archive.getArchiveSuccessFinish() == 1; // Already completed
     }
-    private void getProperties(Archive archive){
+
+    private void getProperties(Archive archive) {
         health = archive.getArchiveHealth();
         science = archive.getArchiveScience();
         social = archive.getArchiveSocial();
         game = archive.getArchiveGame();
         money = archive.getArchiveMoney();
     }
+
     @GetMapping("/history")
     public ResponseEntity<List<ChatMessage>> getHistory() {
         return ResponseEntity.ok(chatMessageRepository.findAllByOrderByIdAsc());

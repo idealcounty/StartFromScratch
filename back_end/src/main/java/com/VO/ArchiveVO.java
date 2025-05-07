@@ -16,6 +16,7 @@ public class ArchiveVO {
     private Integer archiveMoney;
     private Integer archiveSuccessFinish;
     private Integer userId;
+    private String finalOutcome;
     public Archive toPO(){
         Archive archive = new Archive();
         archive.setArchiveId(archiveId);
@@ -26,6 +27,7 @@ public class ArchiveVO {
         archive.setArchiveMoney(archiveMoney);
         archive.setArchiveSuccessFinish(archiveSuccessFinish);
         archive.setUserId(userId);
+        archive.setFinalOutcome(finalOutcome);
         return archive;
     }
 }
