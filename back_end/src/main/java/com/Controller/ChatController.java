@@ -78,7 +78,9 @@ public class ChatController {
                 .apiKey(apiKey)
                 .appId(appId)
                 .prompt(modifiedInput)
-                .build();
+                    .ragOptions(RagOptions.builder().pipelineIds(List.of("file_b75bbb2b24244ab49424d7cca40e168f_11940386", "file_a291659172454c948a1f0aae6c591ad8_11940386")).build())
+                    .build();
+
 
             Application application = new Application();
             ApplicationResult result = application.call(param);
@@ -190,15 +192,18 @@ public class ChatController {
     }
 
     private boolean judge(Archive archive) {
-        // Align with finalChapterMessage thresholds (>90, >50, <10)
-        // Trigger if any attribute is extreme or meets outcome conditions
-        return archive.getArchiveHealth() >= 90 || archive.getArchiveScience() >= 90 ||
+
+        if(archive.getArchiveHealth() >= 90 || archive.getArchiveScience() >= 90 ||
                archive.getArchiveSocial() >= 90 || archive.getArchiveGame() >= 90 ||
                archive.getArchiveMoney() >= 90 ||
                archive.getArchiveHealth() <= 10 || archive.getArchiveScience() <= 10 ||
                archive.getArchiveSocial() <= 10 || archive.getArchiveGame() <= 10 ||
-               archive.getArchiveMoney() <= 10 ||
-               archive.getArchiveSuccessFinish() == 1; // Already completed
+               archive.getArchiveMoney() <= 10){
+            archive.setArchiveSuccessFinish(1);
+            return true;
+        }
+        return false;
+
     }
 
     private void getProperties(Archive archive) {

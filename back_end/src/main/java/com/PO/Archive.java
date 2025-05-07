@@ -34,7 +34,7 @@ public class Archive {
     private Integer archiveMoney;
 
     @Column(name = "archive_success_finish")
-    private Integer archiveSuccessFinish;
+    private Integer archiveSuccessFinish=0;
 
     @Column(name = "user_id")
     private Integer userId;
