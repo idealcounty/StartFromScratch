@@ -105,7 +105,7 @@ public class ChatController {
                     "- 若某项属性值 > 90，安排一个非常好的结局（例如顶尖大学毕业、行业领袖）。\n" +
                     "- 若某项属性值 > 50，安排一个比较好的结局（例如顺利毕业、稳定工作）。\n" +
                     "- 若某项属性值 < 10，安排一个不太好的结局（例如辍学、经济困难）。\n" +
-                    "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过500字符。",
+                    "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过200字符。",
                     science, health, game, social, money
                 );
 
@@ -131,13 +131,13 @@ public class ChatController {
                     finalChapterMessageRecord.setAiResponse(finalChapterAiReply);
                     finalChapterMessageRecord.setTimestamp(LocalDateTime.now());
                     chatMessageRepository.save(finalChapterMessageRecord);
-
-                    // Include final chapter reply in response
                     successResponse.put("finalOutcome", finalChapterAiReply);
+                    return ResponseEntity.ok(successResponse);
                 } catch (ApiException | NoApiKeyException | InputRequiredException e) {
                     // Log error but don't fail the entire request
                     System.err.println("Final chapter API error: " + e.getMessage());
                     successResponse.put("finalOutcomeError", "无法生成大学结局：" + e.getMessage());
+                    return ResponseEntity.ok(successResponse);
                 }
             }
 
@@ -197,7 +197,7 @@ public class ChatController {
                 "- 若某项属性值 > 90，安排一个非常好的结局（例如顶尖大学毕业、行业领袖）。\n" +
                 "- 若某项属性值 > 50，安排一个比较好的结局（例如顺利毕业、稳定工作）。\n" +
                 "- 若某项属性值 < 10，安排一个不太好的结局（例如辍学、经济困难）。\n" +
-                "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过500字符。",
+                "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过200字符。",
                 science, health, game, social, money
             );
 
@@ -338,9 +338,9 @@ public class ChatController {
     }
 
     private boolean judge(Archive archive) {
-        if (archive.getArchiveHealth() >= 90 || archive.getArchiveScience() >= 90 ||
-            archive.getArchiveSocial() >= 90 || archive.getArchiveGame() >= 90 ||
-            archive.getArchiveMoney() >= 90 ||
+        if (archive.getArchiveHealth() >= 100 || archive.getArchiveScience() >= 100 ||
+            archive.getArchiveSocial() >= 100 || archive.getArchiveGame() >= 100 ||
+            archive.getArchiveMoney() >= 100 ||
             archive.getArchiveHealth() <= 10 || archive.getArchiveScience() <= 10 ||
             archive.getArchiveSocial() <= 10 || archive.getArchiveGame() <= 10 ||
             archive.getArchiveMoney() <= 10) {
