@@ -242,73 +242,45 @@ public class ChatController {
         }
     }
 
-    @GetMapping("/guide")
-    public ResponseEntity<?> getGuide() {
-        try {
-            // Validate user and archive
-            Integer userId = userService.getInformation().getUserId();
-            Archive archive = archiveRepository.findByUserId(userId);
-            if (archive == null) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "用户存档不存在");
-                return ResponseEntity.status(404).body(errorResponse);
-            }
+        @GetMapping("/guide")
+        public ResponseEntity<?> getGuide() {
+            try {
+                // Validate user and archive
+                Integer userId = userService.getInformation().getUserId();
+                Archive archive = archiveRepository.findByUserId(userId);
+                if (archive == null) {
+                    Map<String, Object> errorResponse = new HashMap<>();
+                    errorResponse.put("error", "用户存档不存在");
+                    return ResponseEntity.status(404).body(errorResponse);
+                }
 
-            // Check if archive is already completed
-            Integer successFinish = archive.getArchiveSuccessFinish();
-            if (successFinish != null && successFinish == 1) {
+                // Check if archive is already completed
+                Integer successFinish = archive.getArchiveSuccessFinish();
+                if (successFinish != null && successFinish == 1) {
+                    Map<String, Object> successResponse = new HashMap<>();
+                    successResponse.put("guide", "存档已完成，请查看结局或开始新游戏！");
+                    return ResponseEntity.ok(successResponse);
+                }
+
+                // 直接定义固定的引导话
+                String guideReply = "你好！欢迎来到《Re0：从0开始的呢喃生活》！在这里，你将面对各种大学生活的场景和选择。你可以从给定的选项中选择，也可以自由发挥。每次选择都会影响你的学习、健康、游戏、社交和金钱属性。当这些属性达到特定值时，将会解锁不同的结局哦！随时点击“结束游戏”查看当前属性对应的结局吧！快来开启你的大学冒险之旅！";
+
+                // Save guide message to chat history
+                ChatMessage guideMessageRecord = new ChatMessage();
+                guideMessageRecord.setUserInput("系统引导");
+                guideMessageRecord.setAiResponse(guideReply);
+                guideMessageRecord.setTimestamp(LocalDateTime.now());
+                chatMessageRepository.save(guideMessageRecord);
                 Map<String, Object> successResponse = new HashMap<>();
-                successResponse.put("guide", "存档已完成，请查看结局或开始新游戏！");
+                successResponse.put("guide", guideReply);
+
                 return ResponseEntity.ok(successResponse);
+            } catch (Exception e) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "服务器错误: " + e.getMessage());
+                return ResponseEntity.status(500).body(errorResponse);
             }
-
-            // Construct guide prompt
-            String guidePrompt =  String.format(
-                "你是《Re0：从0开始的呢喃生活》的引导者，请为新用户生成一段欢迎和引导话，内容需包含以下要点：\n"+
-                "欢迎用户体验游戏。\n"+
-                "说明游戏核心机制：系统会提供场景和选项，用户可选择选项或自由输入。\n"+
-                "介绍属性变化：每次选择会影响学习、健康、游戏、社交、金钱属性。\n"+
-                "说明结局触发：属性达到特定值（高或低）会解锁不同结局。\n"+
-                "提示主动结束：用户可随时点击“结束游戏”查看当前属性对应的结局。\n"+
-                "语气热情、友好，鼓励用户探索，长度不超过300字符。\n"+
-                "示例：\n"+
-                "你好！欢迎体验Re0：从0开始的呢喃生活！接下来我会给你场景和选项，你可选择或自由发挥.每次选择会改变学习、健康、游戏、社交、金钱属性。属性达到特定值将解锁结局！随时可点击‘结束游戏’查看当前结局，快开始你的冒险吧！”\n"+
-                "请根据示例生成一段类似的引导话。\n"
-            );
-
-            ApplicationParam guideParam = ApplicationParam.builder()
-                .apiKey(apiKey)
-                .appId(appId)
-                .prompt(guidePrompt)
-                .build();
-
-            Application guideApplication = new Application();
-            ApplicationResult guideResult = guideApplication.call(guideParam);
-            String guideReply = guideResult.getOutput().getText();
-
-            // Save guide message to chat history
-            ChatMessage guideMessageRecord = new ChatMessage();
-            guideMessageRecord.setUserInput("系统引导");
-            guideMessageRecord.setAiResponse(guideReply);
-            guideMessageRecord.setTimestamp(LocalDateTime.now());
-            System.out.println("test");
-            chatMessageRepository.save(guideMessageRecord);
-            System.out.println("test");
-            // Prepare response
-            Map<String, Object> successResponse = new HashMap<>();
-            successResponse.put("guide", guideReply);
-
-            return ResponseEntity.ok(successResponse);
-        } catch (ApiException | NoApiKeyException | InputRequiredException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "DashScope API error: " + e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "服务器错误: " + e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
         }
-    }
 
     private void updateArchiveFromReply(String reply, Archive archive) {
         String regex = "(学习|健康|游戏|社交|金钱)\\s*([+-]\\d+)";
