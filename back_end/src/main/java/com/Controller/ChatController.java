@@ -10,6 +10,7 @@ import com.alibaba.dashscope.app.*;
 import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +31,7 @@ public class ChatController {
 
     @Value("${dashscope.app-id}")
     private String appId;
-
+    @Autowired
     private final ChatMessageRepository chatMessageRepository;
     private final ArchiveRepository archiveRepository;
     private final UserService userService;
@@ -84,8 +85,7 @@ public class ChatController {
             Application application = new Application();
             ApplicationResult result = application.call(param);
             String aiReply = result.getOutput().getText();
-
-            // Update archive based on regular reply
+            System.out.println(aiReply);
             updateArchiveFromReply(aiReply, archive);
 
             // Prepare response
@@ -272,7 +272,7 @@ public class ChatController {
                 "提示主动结束：用户可随时点击“结束游戏”查看当前属性对应的结局。\n"+
                 "语气热情、友好，鼓励用户探索，长度不超过300字符。\n"+
                 "示例：\n"+
-                "你好！欢迎体验Re0：从0开始的呢喃生活！接下来我会给你场景和选项，你可选择或自由发挥😋每次选择会改变学习、健康、游戏、社交、金钱属性。属性达到特定值将解锁结局！随时可点击‘结束游戏’查看当前结局，快开始你的冒险吧！”\n"+
+                "你好！欢迎体验Re0：从0开始的呢喃生活！接下来我会给你场景和选项，你可选择或自由发挥.每次选择会改变学习、健康、游戏、社交、金钱属性。属性达到特定值将解锁结局！随时可点击‘结束游戏’查看当前结局，快开始你的冒险吧！”\n"+
                 "请根据示例生成一段类似的引导话。\n"
             );
 
@@ -291,8 +291,9 @@ public class ChatController {
             guideMessageRecord.setUserInput("系统引导");
             guideMessageRecord.setAiResponse(guideReply);
             guideMessageRecord.setTimestamp(LocalDateTime.now());
+            System.out.println("test");
             chatMessageRepository.save(guideMessageRecord);
-
+            System.out.println("test");
             // Prepare response
             Map<String, Object> successResponse = new HashMap<>();
             successResponse.put("guide", guideReply);
