@@ -220,7 +220,7 @@ public ResponseEntity<?> sendMessage(@RequestBody ChatRequest request) {
     }
 }
 
-    @PostMapping("/end")
+    @GetMapping("/end")
     public ResponseEntity<?> endConversation() {
         try {
             // Validate user and archive
