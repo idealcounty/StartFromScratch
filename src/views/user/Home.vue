@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { Chatsend, ChatGuide,ChatEnd } from '../../api/chat';
 import { userInfo } from "../../api/user.ts";
 import { getArchive } from "../../api/archive.ts";
@@ -21,6 +21,7 @@ const points = ref({
 const Message = ref('')
 const messages = ref<ChatMessage[]>([])
 const guideText = ref('') // 新增引导词响应式变量
+const chatBodyRef = ref<HTMLElement | null>(null);  // 添加聊天框的引用
 
 // 获取引导词的独立方法
 async function fetchGuide() {
@@ -33,23 +34,36 @@ async function fetchGuide() {
       isAI: true,
       timestamp: Date.now()
     })
+    scrollToBottom();  // 添加引导词后滚动到底部
   } catch (error) {
     console.error('获取引导词失败:', error)
   }
 }
 
-function getpoints() {
-  userInfo().then((res) => {
-    getArchive(res.data.result.userId).then((res) => {
-      console.log(res)
-      points.value.archiveGame = res.data.result.archiveGame
-      points.value.archiveSocial = res.data.result.archiveSocial
-      points.value.archiveScience = res.data.result.archiveScience
-      points.value.archiveMoney = res.data.result.archiveMoney
-      points.value.archiveHealth = res.data.result.archiveHealth
-      console.log(points)
-    })
-  })
+// 提取getpoints为独立的异步函数以便复用
+async function getpoints() {
+  try {
+    const userRes = await userInfo()
+    if (userRes.data.result && userRes.data.result.userId) {
+      const archiveRes = await getArchive(userRes.data.result.userId)
+      
+      if (archiveRes.data.result) {
+        points.value.archiveGame = archiveRes.data.result.archiveGame
+        points.value.archiveSocial = archiveRes.data.result.archiveSocial
+        points.value.archiveScience = archiveRes.data.result.archiveScience
+        points.value.archiveMoney = archiveRes.data.result.archiveMoney
+        points.value.archiveHealth = archiveRes.data.result.archiveHealth
+        console.log('档案数据已更新:', points.value)
+        
+        // 数据更新后显式调用drawRadarChart以确保雷达图更新
+        nextTick(() => {
+          drawRadarChart()
+        })
+      }
+    }
+  } catch (error) {
+    console.error('获取档案数据失败:', error)
+  }
 }
 
 // 初始化时获取数据和引导词
@@ -59,7 +73,16 @@ onMounted(() => {
   drawRadarChart()
 })
 
-function handlechat() {
+// 滚动到聊天框底部的函数
+function scrollToBottom() {
+  nextTick(() => {
+    if (chatBodyRef.value) {
+      chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
+    }
+  });
+}
+
+async function handlechat() {
   if (!Message.value.trim()) return
 
   // 添加用户消息
@@ -68,45 +91,77 @@ function handlechat() {
     isAI: false,
     timestamp: Date.now()
   })
+  scrollToBottom();  // 用户发送消息后滚动到底部
 
   const userMessage = Message.value
   Message.value = ''
 
-  Chatsend({ message: userMessage }).then(res => {
+  try {
+    // 发送消息
+    const res = await Chatsend({ message: userMessage })
+    
     // 添加AI回复
     messages.value.push({
       content: res.data.reply,
       isAI: true,
       timestamp: Date.now()
     })
-  }).catch(error => {
+    scrollToBottom();  // AI回复后滚动到底部
+    
+    // 对话完成后，重新获取points数据
+    await getpoints()
+    
+  } catch (error) {
     // 错误处理
     messages.value.push({
       content: '暂时无法处理您的请求，请稍后再试',
       isAI: true,
       timestamp: Date.now()
     })
-  })
+    scrollToBottom();  // 错误消息后也滚动到底部
+    console.error('聊天请求失败:', error)
+  }
 }
 
-function handleEnd(){
-  ChatEnd().then((res)=>{
+async function handleEnd() {
+  try {
+    const res = await ChatEnd()
     console.log(res)
     messages.value.push({
       content: res.data.finalOutcome,
       isAI: true,
       timestamp: Date.now()
     })
-  })
+    scrollToBottom();  // 结束游戏消息后滚动到底部
+    
+    // 游戏结束后，也重新获取points数据
+    await getpoints()
+    
+  } catch (error) {
+    console.error('结束游戏请求失败:', error)
+    messages.value.push({
+      content: '结束游戏请求失败，请稍后再试',
+      isAI: true,
+      timestamp: Date.now()
+    })
+    scrollToBottom();  // 错误消息后也滚动到底部
+  }
 }
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 function drawRadarChart() {
   const canvas = canvasRef.value
-  if (!canvas) return
+  if (!canvas) {
+    console.warn('雷达图画布元素未找到')
+    return
+  }
+  
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) {
+    console.warn('无法获取画布上下文')
+    return
+  }
 
   const width = canvas.width
   const height = canvas.height
@@ -163,21 +218,34 @@ function drawRadarChart() {
     ctx.textBaseline = 'middle'
     ctx.fillText(labels[i], labelX, labelY)
   }
+
+  console.log('雷达图已重新渲染')
 }
 
 onMounted(drawRadarChart)
-watch(points, drawRadarChart, { deep: true })
+watch(points, () => {
+  console.log('通过监听器检测到points变化，更新雷达图')
+  drawRadarChart()
+}, { deep: true })
+
+// 监听消息数组变化，确保在消息添加时滚动到底部
+watch(messages, () => {
+  scrollToBottom();
+}, { deep: true });
 </script>
 
 <template>
   <div class="container">
     <div class="chat-container">
       <div class="chat-header">
-        <h2>Welcome</h2>
-        <p>开始你的nju生活吧</p>
+        <div class="header-text">
+          <h2>Welcome</h2>
+          <p>开始你的nju生活吧</p>
+        </div>
+        <button class="end-game-btn" @click="handleEnd">结束游戏</button>
       </div>
 
-      <div class="chat-body">
+      <div class="chat-body" ref="chatBodyRef">
         <div
             v-for="(msg, index) in messages"
             :key="index"
@@ -246,9 +314,6 @@ watch(points, drawRadarChart, { deep: true })
         </div>
       </div>
     </div>
-    <div class="end-game-wrapper">
-      <button class="end-game-btn" @click="handleEnd">结束游戏</button>
-    </div>
   </div>
 </template>
 
@@ -281,19 +346,29 @@ watch(points, drawRadarChart, { deep: true })
 }
 
 .chat-header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
-  color: white;
+  position: relative;
+}
+
+.header-text {
+  text-align: center;
+  flex-grow: 1; /* 让文本占据剩余空间并居中 */
 }
 
 .chat-header h2 {
   font-size: 24px;
   margin-bottom: 5px;
+  color: #000000; /* 将Welcome文字改为黑色 */
+  font-weight: 600;
 }
 
 .chat-header p {
   font-size: 14px;
   opacity: 0.8;
+  color: #333333; /* 副标题也改为深色 */
 }
 
 .chat-body {
@@ -491,6 +566,15 @@ watch(points, drawRadarChart, { deep: true })
     order: -1;
     margin-bottom: 20px;
   }
+
+  .chat-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .end-game-btn {
+    align-self: flex-end;
+  }
 }
 
 .radar-chart-wrapper {
@@ -500,24 +584,18 @@ watch(points, drawRadarChart, { deep: true })
   padding: 10px;
 }
 
-.end-game-wrapper {
-  grid-column: 1 / -1;
-  margin-top: 30px;
-  display: flex;
-  justify-content: center;
-}
-
 .end-game-btn {
-  padding: 12px 40px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
   border: none;
-  border-radius: 25px;
+  border-radius: 20px;
   color: white;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  white-space: nowrap;
 }
 
 .end-game-btn:hover {
@@ -529,14 +607,7 @@ watch(points, drawRadarChart, { deep: true })
   transform: translateY(1px);
 }
 
-@media (max-width: 768px) {
-  .end-game-wrapper {
-    margin-top: 20px;
-  }
-
-  .end-game-btn {
-    width: 100%;
-    max-width: 300px;
-  }
+.end-game-wrapper {
+  display: none;
 }
 </style>
