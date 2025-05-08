@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { Chatsend } from '../../api/chat';
+import { Chatsend, ChatGuide,ChatEnd } from '../../api/chat';
 import { userInfo } from "../../api/user.ts";
 import { getArchive } from "../../api/archive.ts";
 
@@ -20,21 +20,42 @@ const points = ref({
 
 const Message = ref('')
 const messages = ref<ChatMessage[]>([])
+const guideText = ref('') // 新增引导词响应式变量
+
+// 获取引导词的独立方法
+async function fetchGuide() {
+  try {
+    const res = await ChatGuide()
+    guideText.value = res.data.guide
+    // 将引导词作为第一条AI消息添加
+    messages.value.push({
+      content: res.data.guide,
+      isAI: true,
+      timestamp: Date.now()
+    })
+  } catch (error) {
+    console.error('获取引导词失败:', error)
+  }
+}
 
 function getpoints() {
   userInfo().then((res) => {
     getArchive(res.data.result.userId).then((res) => {
-      console.log(res)
       points.value.archiveGame = res.data.result.archiveGame
       points.value.archiveSocial = res.data.result.archiveSocial
       points.value.archiveScience = res.data.result.archiveScience
       points.value.archiveMoney = res.data.result.archiveMoney
       points.value.archiveHealth = res.data.result.archiveHealth
-      console.log(points)
     })
   })
 }
-getpoints();
+
+// 初始化时获取数据和引导词
+onMounted(() => {
+  getpoints()
+  fetchGuide() // 组件挂载时获取引导词
+  drawRadarChart()
+})
 
 function handlechat() {
   if (!Message.value.trim()) return
@@ -56,10 +77,22 @@ function handlechat() {
       isAI: true,
       timestamp: Date.now()
     })
+    getpoints()
   }).catch(error => {
     // 错误处理
     messages.value.push({
       content: '暂时无法处理您的请求，请稍后再试',
+      isAI: true,
+      timestamp: Date.now()
+    })
+  })
+}
+
+function handleEnd(){
+  ChatEnd().then((res)=>{
+    console.log(res)
+    messages.value.push({
+      content: res.data.finalOutcome,
       isAI: true,
       timestamp: Date.now()
     })
@@ -210,6 +243,10 @@ watch(points, drawRadarChart, { deep: true })
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="end-game-wrapper">
+      <button class="end-game-btn" @click="handleEnd">结束游戏</button>
     </div>
   </div>
 </template>
@@ -459,5 +496,45 @@ watch(points, drawRadarChart, { deep: true })
   display: flex;
   justify-content: center;
   margin-bottom: 1.5rem;
+}
+
+.end-game-wrapper {
+  grid-column: 1 / -1;
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.end-game-btn {
+  padding: 12px 40px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+  border: none;
+  border-radius: 25px;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.end-game-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.end-game-btn:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 768px) {
+  .end-game-wrapper {
+    margin-top: 20px;
+  }
+
+  .end-game-btn {
+    width: 100%;
+    max-width: 300px;
+  }
 }
 </style>

@@ -12,3 +12,18 @@ export const Chatsend = (chatinfo:ChatInfo) => {
             return res
         })
 }
+
+export const ChatGuide = () => {
+    return axios.get(`${CHAT_MODULE}/guide`)
+        .then(res => {
+            return res
+        })
+}
+
+export const ChatEnd = () => {
+    return axios.get(`${CHAT_MODULE}/end`)
+        .then(res => {
+            console.log(res)
+            return res
+        })
+}
