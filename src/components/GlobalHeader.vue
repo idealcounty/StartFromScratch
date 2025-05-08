@@ -39,8 +39,6 @@ export default {
 
 <style scoped lang="scss">
 /* 全局样式变量 */
-$primary-color: #8A6CD6;       /* 主色调 - 柔和紫 */
-$secondary-color: #F5E0FF;     /* 辅助色 - 淡粉紫 */
 $text-color: #333;             /* 文本颜色 */
 $font-family: 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
 
@@ -50,7 +48,7 @@ $font-family: 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
   min-height: 120px;
   padding: 20px 40px;
   box-sizing: border-box;
-  background: linear-gradient(135deg, $primary-color 25%, $secondary-color 100%);
+  background: linear-gradient(to bottom, #708090 25%, #DFF1F4 100%);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: height 0.3s ease;
 
@@ -75,15 +73,18 @@ $font-family: 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
+  margin-left: -50px;  /* 添加左边距，使标题左移 */
+  padding-left: 10px;  /* 添加内边距 */
 }
 
 .main-title {
   margin: 0;
-  font-size: 2.2rem;
-  font-weight: 500;
+  font-size: 2.4rem;  /* 增大字体 */
+  font-weight: 600;  /* 加粗字体 */
   color: white;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  letter-spacing: 1.5px;  /* 增加字间距 */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);  /* 增强文字阴影 */
+  font-family: 'SimHei', 'Microsoft YaHei', $font-family;  /* 修改字体 */
   transform: translateY(20px);
   opacity: 0;
   transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -96,9 +97,10 @@ $font-family: 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
 
 .subtitle {
   margin: 0;
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 300;
+  font-size: 1.2rem;  /* 略微增大字体 */
+  color: rgba(255, 255, 255, 0.95);  /* 增加不透明度 */
+  font-weight: 400;  /* 增加字重 */
+  font-family: 'KaiTi', 'STKaiti', $font-family;  /* 修改为楷体风格 */
   transform: translateY(20px);
   opacity: 0;
   transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s;
@@ -121,7 +123,7 @@ $font-family: 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
 .nav-item {
   position: relative;
   color: white;
-  font-size: 1.1rem;
+  font-size: 24px;
   font-weight: 400;
   text-decoration: none;
   transition: color 0.3s ease;
@@ -138,7 +140,7 @@ $font-family: 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
   }
 
   &:hover {
-    color: $secondary-color;
+    color: #94A9C1;
   }
 
   &:hover:before {

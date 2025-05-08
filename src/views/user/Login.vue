@@ -125,7 +125,7 @@ function JumpToRegister() {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #6e8efb, #a777e3, #ff00cc);
+  background: linear-gradient(135deg, #5d7a9c, #3d5a7c, #6b8eb3);  /* 修改为蓝灰色系渐变 */
   z-index: -2;
 }
 
@@ -224,22 +224,25 @@ function JumpToRegister() {
 .login-header {
   text-align: center;
   margin-bottom: 30px;
-  color: white;
+  color: #212121;  /* 改为深黑色 */
 }
 
 .login-header h1 {
   font-size: 2.2rem;
   font-weight: 600;
   margin-bottom: 10px;
-  background: linear-gradient(to right, #ffffff, #e0e0e0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  color: #000000;  /* 添加实色黑色 */
+  /* 移除渐变和透明效果，使用实色 */
+  background: none;
+  -webkit-text-fill-color: initial;
+  -webkit-background-clip: initial;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);  /* 调整阴影使文字更清晰 */
 }
 
 .login-header p {
   font-size: 1rem;
-  opacity: 0.8;
+  opacity: 1;  /* 提高不透明度 */
+  color: #212121;  /* 改为深黑色 */
 }
 
 /* 输入组样式 */
@@ -251,17 +254,18 @@ function JumpToRegister() {
 .input-group label {
   display: block;
   margin-bottom: 8px;
-  color: #e0e0e0;
+  color: #212121;  /* 改为深黑色 */
   font-size: 0.9rem;
+  font-weight: 500;  /* 加粗使其更清晰 */
 }
 
 .input-group input {
   width: 100%;
   padding: 12px 15px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.7);  /* 提高背景不透明度 */
+  border: 1px solid rgba(0, 0, 0, 0.2);  /* 更改边框颜色 */
   border-radius: 8px;
-  color: white;
+  color: #212121;  /* 输入文字改为深黑色 */
   font-size: 1rem;
   transition: all 0.3s ease;
   outline: none;
@@ -269,8 +273,8 @@ function JumpToRegister() {
 
 .input-group input:focus {
   background-color: rgba(255, 255, 255, 0.3);
-  border-color: #a777e3;
-  box-shadow: 0 0 0 3px rgba(167, 119, 227, 0.2);
+  border-color: #5d7a9c;  /* 修改为主色调 */
+  box-shadow: 0 0 0 3px rgba(93, 122, 156, 0.2);  /* 修改为主色调 */
 }
 
 /* 记住我和忘记密码 */
@@ -290,23 +294,23 @@ function JumpToRegister() {
   margin-right: 8px;
   width: 16px;
   height: 16px;
-  accent-color: #a777e3;
+  accent-color: #5d7a9c;  /* 修改为主色调 */
 }
 
 .remember label {
-  color: #e0e0e0;
+  color: #212121;  /* 改为深黑色 */
   font-size: 0.9rem;
 }
 
 .forgot-password {
-  color: #e0e0e0;
+  color: #212121;  /* 改为深黑色 */
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.3s ease;
 }
 
 .forgot-password:hover {
-  color: #ffffff;
+  color: #000000;  /* 悬停时更黑 */
   text-decoration: underline;
 }
 
@@ -314,28 +318,30 @@ function JumpToRegister() {
 .login-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(90deg, #6e8efb, #a777e3);
+  background: linear-gradient(90deg, #5d7a9c, #3d5a7c);  /* 保持#5d7a9c系列颜色 */
   border: none;
   border-radius: 8px;
-  color: white;
+  color: white;  /* 按钮文字保持白色 */
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(102, 142, 251, 0.3);
+  box-shadow: 0 5px 15px rgba(93, 122, 156, 0.3);
 }
 
 .login-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 142, 251, 0.4);
+  box-shadow: 0 8px 20px rgba(93, 122, 156, 0.4);
+  background: linear-gradient(90deg, #6b8eb3, #5d7a9c);  /* 悬停时稍微亮一些 */
 }
 
 .login-button:active {
   transform: translateY(0);
+  background: #3d5a7c;  /* 点击时使用更深的颜色 */
 }
 
 .login-button:disabled {
-  background: linear-gradient(90deg, #b0b0b0, #a0a0a0);
+  background: linear-gradient(90deg, #a0a0a0, #808080);  /* 禁用时使用灰色渐变 */
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -344,19 +350,20 @@ function JumpToRegister() {
 .login-footer {
   text-align: center;
   margin-top: 25px;
-  color: #e0e0e0;
+  color: #212121;  /* 改为深黑色 */
   font-size: 0.9rem;
 }
 
 .login-footer a {
-  color: #e0e0e0;
+  color: #000000;  /* 链接改为黑色 */
   text-decoration: none;
   padding-left: 5px;
   transition: color 0.3s ease;
+  font-weight: 500;  /* 加粗使其更醒目 */
 }
 
 .login-footer a:hover {
-  color: #ffffff;
+  color: #000000;  /* 悬停时保持黑色 */
   text-decoration: underline;
 }
 

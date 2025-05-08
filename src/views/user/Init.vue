@@ -6,11 +6,11 @@ import { userInfo } from "../../api/user.ts";
 
 const router = useRouter()
 const points = ref<archiveInfo>({
-  archiveHealth: 0,
-  archiveSocial: 0,
-  archiveGame: 0,
-  archiveScience: 0,
-  archiveMoney: 0,
+  archiveHealth: 55,
+  archiveSocial: 55,
+  archiveGame: 55,
+  archiveScience: 55,
+  archiveMoney: 55,
   userId: 0,
 })
 
@@ -57,13 +57,14 @@ function drawRadarChart() {
 
   const centerX = width / 2
   const centerY = height / 2
-  const radius = 100
+  const radius = Math.min(width, height) / 3
   const labels = Object.keys(filteredPoints.value)
   const values = Object.values(filteredPoints.value)
 
   ctx.strokeStyle = '#ccc'
   ctx.lineWidth = 1
 
+  // 画背景网格
   for (let i = 1; i <= 5; i++) {
     ctx.beginPath()
     for (let j = 0; j < 5; j++) {
@@ -77,8 +78,10 @@ function drawRadarChart() {
     ctx.stroke()
   }
 
-  ctx.strokeStyle = '#9c27b0'
-  ctx.fillStyle = 'rgba(156, 39, 176, 0.4)'
+  // 画能力值多边形
+  ctx.strokeStyle = '#5d7a9c'
+  ctx.lineWidth = 2
+  ctx.fillStyle = 'rgba(93, 122, 156, 0.5)'
   ctx.beginPath()
   for (let i = 0; i < 5; i++) {
     const angle = (Math.PI * 2 / 5) * i - Math.PI / 2
@@ -91,7 +94,51 @@ function drawRadarChart() {
   ctx.closePath()
   ctx.stroke()
   ctx.fill()
+
+  // 绘制标签
+  ctx.fillStyle = '#222'
+  ctx.font = 'bold 21px sans-serif'
+  for (let i = 0; i < labels.length; i++) {
+    const angle = (Math.PI * 2 / labels.length) * i - Math.PI / 2
+    const labelRadius = radius * 1.3
+    
+    const x = centerX + Math.cos(angle) * labelRadius
+    const y = centerY + Math.sin(angle) * labelRadius
+
+    const label = labels[i].replace('archive', '')
+    let formatted = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()
+    
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    
+    if (i === 0) {
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+    } else if (i === 1) {
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+    } else if (i === 2) {
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+    } else if (i === 3) {
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+    } else if (i === 4) {
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+    }
+    
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    if (i === 0) {
+      offsetY = -10;
+    }
+    
+    ctx.fillText(formatted, x + offsetX, y + offsetY)
+  }
 }
+
 
 onMounted(drawRadarChart)
 watch(points, drawRadarChart, { deep: true })
@@ -103,7 +150,7 @@ watch(points, drawRadarChart, { deep: true })
 
     <div class="main-grid">
       <div class="radar-chart-wrapper">
-        <canvas ref="canvasRef" width="250" height="250"></canvas>
+        <canvas ref="canvasRef" width="600" height="500"></canvas>
       </div>
 
       <div class="category-list">
@@ -120,8 +167,8 @@ watch(points, drawRadarChart, { deep: true })
             <input
                 type="range"
                 v-model.number="points[name]"
-                :min="0"
-                :max="100"
+                :min="55"
+                :max="85"
                 @input="handleInput(name, $event)"
             class="points-input"
             >
@@ -146,16 +193,16 @@ watch(points, drawRadarChart, { deep: true })
 
 <style scoped>
 .container {
-  max-width: 1000px;
+  max-width: 1300px;
   margin: 2rem auto;
   padding: 2rem;
-  background: linear-gradient(145deg, #f0e6ff, #ffe6f7);
+  background: transparent;
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(149, 69, 199, 0.1);
+  box-shadow: 0 8px 32px rgba(147, 168, 192, 0.2);
 }
 
 h1 {
-  color: #6a1b9a;
+  color: #000000;
   text-align: center;
   margin-bottom: 2rem;
   display: flex;
@@ -166,8 +213,8 @@ h1 {
 
 .remaining {
   font-size: 1.2rem;
-  color: #e91e63;
-  background: rgba(233, 30, 99, 0.1);
+  color: #ffffff;
+  background: #5d7a9c;
   padding: 0.5rem 1rem;
   border-radius: 10px;
 }
@@ -185,30 +232,33 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-width: 280px;
+  min-width: 600px;
+  margin: 1rem auto;
+  padding: 1rem;
 }
 
 .category-list {
-  flex: 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
-  min-width: 280px;
+  min-width: 350px;
 }
 
 .category-card {
-  background: white;
+  background: rgba(245, 245, 245, 0.5);
   padding: 1rem 1.5rem;
   border-radius: 15px;
-  box-shadow: 0 4px 16px rgba(149, 69, 199, 0.1);
+  box-shadow: 0 4px 16px rgba(147, 168, 192, 0.15);
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(3px);
 }
 
 .category-header {
-  color: #9c27b0;
-  font-weight: 600;
-  font-size: 1.1rem;
+  color: #476a8c;
+  font-weight: 700;
+  font-size: 1.3rem;
   margin-bottom: 0.5rem;
   text-align: center;
 }
@@ -240,12 +290,12 @@ h1 {
   font-size: 1.1rem;
   border: none;
   border-radius: 30px;
-  background: linear-gradient(135deg, #e91e63, #9c27b0);
+  background: linear-gradient(135deg, #93a8c0, #5d7a9c);
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(233, 30, 99, 0.2);
+  box-shadow: 0 4px 20px rgba(93, 122, 156, 0.4);
 }
 
 .confirm-btn:disabled {
@@ -257,7 +307,7 @@ h1 {
 
 .confirm-btn:not(:disabled):hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(233, 30, 99, 0.3);
+  box-shadow: 0 6px 25px rgba(147, 168, 192, 0.5);
 }
 
 .confirm-btn:not(:disabled):active {

@@ -143,7 +143,7 @@ function JumpToLogin() {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #6e8efb, #a777e3, #ff00cc);
+  background: linear-gradient(135deg, #5d7a9c, #3d5a7c, #6b8eb3);
   z-index: -2;
 }
 
@@ -242,22 +242,24 @@ function JumpToLogin() {
 .register-header {
   text-align: center;
   margin-bottom: 30px;
-  color: white;
+  color: #212121;
 }
 
 .register-header h1 {
   font-size: 2.2rem;
   font-weight: 600;
   margin-bottom: 10px;
-  background: linear-gradient(to right, #ffffff, #e0e0e0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  color: #000000;
+  background: none;
+  -webkit-text-fill-color: initial;
+  -webkit-background-clip: initial;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .register-header p {
   font-size: 1rem;
-  opacity: 0.8;
+  opacity: 1;
+  color: #212121;
 }
 
 /* 输入组样式 */
@@ -269,17 +271,18 @@ function JumpToLogin() {
 .input-group label {
   display: block;
   margin-bottom: 8px;
-  color: #e0e0e0;
+  color: #212121;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .input-group input {
   width: 100%;
   padding: 12px 15px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  color: white;
+  color: #212121;
   font-size: 1rem;
   transition: all 0.3s ease;
   outline: none;
@@ -287,15 +290,15 @@ function JumpToLogin() {
 
 .input-group input:focus {
   background-color: rgba(255, 255, 255, 0.3);
-  border-color: #a777e3;
-  box-shadow: 0 0 0 3px rgba(167, 119, 227, 0.2);
+  border-color: #5d7a9c;
+  box-shadow: 0 0 0 3px rgba(93, 122, 156, 0.2);
 }
 
 /* 注册按钮 */
 .register-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(90deg, #6e8efb, #a777e3);
+  background: linear-gradient(90deg, #5d7a9c, #3d5a7c);
   border: none;
   border-radius: 8px;
   color: white;
@@ -303,20 +306,22 @@ function JumpToLogin() {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(102, 142, 251, 0.3);
+  box-shadow: 0 5px 15px rgba(93, 122, 156, 0.3);
 }
 
 .register-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 142, 251, 0.4);
+  box-shadow: 0 8px 20px rgba(93, 122, 156, 0.4);
+  background: linear-gradient(90deg, #6b8eb3, #5d7a9c);
 }
 
 .register-button:active {
   transform: translateY(0);
+  background: #3d5a7c;
 }
 
 .register-button:disabled {
-  background: linear-gradient(90deg, #b0b0b0, #a0a0a0);
+  background: linear-gradient(90deg, #a0a0a0, #808080);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -325,19 +330,20 @@ function JumpToLogin() {
 .register-footer {
   text-align: center;
   margin-top: 25px;
-  color: #e0e0e0;
+  color: #212121;
   font-size: 0.9rem;
 }
 
 .register-footer a {
-  color: #e0e0e0;
+  color: #000000;
   text-decoration: none;
   padding-left: 5px;
   transition: color 0.3s ease;
+  font-weight: 500;
 }
 
 .register-footer a:hover {
-  color: #ffffff;
+  color: #000000;
   text-decoration: underline;
 }
 

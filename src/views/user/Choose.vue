@@ -64,7 +64,6 @@ function handleContinue(){
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #7e57c2 0%, #ec407a 100%);
   gap: 2rem;
   position: relative;
   overflow: hidden;
@@ -76,7 +75,7 @@ function handleContinue(){
   content: '';
   position: absolute;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
   z-index: -1;
 }
 
@@ -136,22 +135,24 @@ function handleContinue(){
 
 /* 重新开始按钮样式 */
 .restart-btn .btn-text {
-  color: #ff6b6b;
-  text-shadow: 0 0 10px rgba(255,107,107,0.5);
+  color: #455d82;
+  text-shadow: 0 0 10px rgba(69, 93, 130, 0.6);
+  font-weight: bold;
 }
 
 .restart-btn {
-  box-shadow: 0 0 20px rgba(255,107,107,0.3);
+  box-shadow: 0 0 20px rgba(69, 93, 130, 0.4);
 }
 
 /* 继续游戏按钮样式 */
 .continue-btn .btn-text {
-  color: #4ecdc4;
-  text-shadow: 0 0 10px rgba(78,205,196,0.5);
+  color: #2c3e50;
+  text-shadow: 0 0 10px rgba(44, 62, 80, 0.6);
+  font-weight: bold;
 }
 
 .continue-btn {
-  box-shadow: 0 0 20px rgba(78,205,196,0.3);
+  box-shadow: 0 0 20px rgba(44, 62, 80, 0.4);
 }
 
 /* 悬停效果 */

@@ -41,11 +41,13 @@ async function fetchGuide() {
 function getpoints() {
   userInfo().then((res) => {
     getArchive(res.data.result.userId).then((res) => {
+      console.log(res)
       points.value.archiveGame = res.data.result.archiveGame
       points.value.archiveSocial = res.data.result.archiveSocial
       points.value.archiveScience = res.data.result.archiveScience
       points.value.archiveMoney = res.data.result.archiveMoney
       points.value.archiveHealth = res.data.result.archiveHealth
+      console.log(points)
     })
   })
 }
@@ -77,7 +79,6 @@ function handlechat() {
       isAI: true,
       timestamp: Date.now()
     })
-    getpoints()
   }).catch(error => {
     // 错误处理
     messages.value.push({
@@ -135,8 +136,8 @@ function drawRadarChart() {
   }
 
   // 绘制数据
-  ctx.strokeStyle = '#9c27b0'
-  ctx.fillStyle = 'rgba(156, 39, 176, 0.4)'
+  ctx.strokeStyle = '#5d7a9c'
+  ctx.fillStyle = 'rgba(93, 122, 156, 0.5)'
   ctx.beginPath()
   for (let i = 0; i < 5; i++) {
     const angle = (Math.PI * 2 / 5) * i - Math.PI / 2
@@ -151,12 +152,13 @@ function drawRadarChart() {
   ctx.fill()
 
   // 添加维度标签
-  ctx.fillStyle = '#9c27b0'
+  ctx.fillStyle = '#5d7a9c'
   for (let i = 0; i < 5; i++) {
     const angle = (Math.PI * 2 / 5) * i - Math.PI / 2
-    const labelX = centerX + Math.cos(angle) * (radius + 15)
-    const labelY = centerY + Math.sin(angle) * (radius + 15)
-    ctx.font = 'bold 12px Arial'
+    const labelRadius = radius + 20
+    const labelX = centerX + Math.cos(angle) * labelRadius
+    const labelY = centerY + Math.sin(angle) * labelRadius
+    ctx.font = 'bold 17px Arial'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(labels[i], labelX, labelY)
@@ -244,7 +246,6 @@ watch(points, drawRadarChart, { deep: true })
         </div>
       </div>
     </div>
-
     <div class="end-game-wrapper">
       <button class="end-game-btn" @click="handleEnd">结束游戏</button>
     </div>
@@ -276,7 +277,7 @@ watch(points, drawRadarChart, { deep: true })
   border-radius: 15px;
   padding: 30px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(93, 122, 156, 0.15);
 }
 
 .chat-header {
@@ -325,7 +326,7 @@ watch(points, drawRadarChart, { deep: true })
 }
 
 .message.user .message-bubble {
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  background: linear-gradient(135deg, #5d7a9c, #3d5a7c);
   color: white;
   border-radius: 18px 18px 4px 18px;
   margin-left: auto;
@@ -384,7 +385,7 @@ watch(points, drawRadarChart, { deep: true })
 }
 
 .message.user .message-bubble {
-  background-color: #6e8efb;
+  background-color: #5d7a9c;
   color: white;
   border-top-right-radius: 5px;
 }
@@ -405,7 +406,7 @@ watch(points, drawRadarChart, { deep: true })
 
 .chat-input button {
   padding: 12px 20px;
-  background: linear-gradient(to right, #6e8efb, #a777e3);
+  background: linear-gradient(to right, #5d7a9c, #3d5a7c);
   border: none;
   border-radius: 8px;
   color: white;
@@ -415,7 +416,7 @@ watch(points, drawRadarChart, { deep: true })
 }
 
 .chat-input button:hover {
-  background: linear-gradient(to right, #5d7df9, #9464d0);
+  background: linear-gradient(to right, #4d6a8c, #2d4a6c);
 }
 
 .stats-container {
@@ -423,8 +424,8 @@ watch(points, drawRadarChart, { deep: true })
   border-radius: 15px;
   padding: 20px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  color: purple;
+  box-shadow: 0 10px 30px rgba(93, 122, 156, 0.15);
+  color: #5d7a9c;
 }
 
 .stats-container h3 {
@@ -475,11 +476,11 @@ watch(points, drawRadarChart, { deep: true })
   font-weight: bold;
 }
 
-.health .stat-icon { color: #ff6b6b; }
-.social .stat-icon { color: #4ecdc4; }
-.game .stat-icon { color: #ff9f43; }
-.science .stat-icon { color: #5f27cd; }
-.money .stat-icon { color: #2ecc71; }
+.health .stat-icon { color: #e74c3c; }
+.social .stat-icon { color: #3498db; }
+.game .stat-icon { color: #f39c12; }
+.science .stat-icon { color: #5d7a9c; }
+.money .stat-icon { color: #27ae60; }
 
 @media (max-width: 768px) {
   .container {
@@ -496,6 +497,7 @@ watch(points, drawRadarChart, { deep: true })
   display: flex;
   justify-content: center;
   margin-bottom: 1.5rem;
+  padding: 10px;
 }
 
 .end-game-wrapper {
