@@ -47,121 +47,178 @@ public class ChatController {
         this.userService = userService;
     }
 
-    @PostMapping("/send")
-    public ResponseEntity<?> sendMessage(@RequestBody ChatRequest request) {
-        try {
-            // Validate user and archive
-            Integer userId = userService.getInformation().getUserId();
-            Archive archive = archiveRepository.findByUserId(userId);
-            if (archive == null) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "用户存档不存在");
-                return ResponseEntity.status(404).body(errorResponse);
-            }
-            getProperties(archive);
+@PostMapping("/send")
+public ResponseEntity<?> sendMessage(@RequestBody ChatRequest request) {
+    try {
+        // Validate user and archive
+        Integer userId = userService.getInformation().getUserId();
+        Archive archive = archiveRepository.findByUserId(userId);
+        if (archive == null) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "用户存档不存在");
+            return ResponseEntity.status(404).body(errorResponse);
+        }
+        getProperties(archive);
 
-            // Validate user input
-            String userInput = request.getMessage();
-            if (userInput == null || userInput.trim().isEmpty()) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("error", "用户输入不能为空");
-                return ResponseEntity.status(400).body(errorResponse);
-            }
+        // Validate user input
+        String userInput = request.getMessage();
+        String modifiedInput;
 
-            // Construct prompt with current attributes
-            String modifiedInput = String.format(
-                "%s\n当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d",
-                userInput, science, health, game, social, money
+        if (userInput == null || userInput.trim().isEmpty()) {
+            // 用户输入为空，生成初始事件和选项
+            modifiedInput = String.format(
+                "你正在模拟“大学生活模拟器”，与用户进行交互。当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d\n" +
+                "请根据当前属性值生成一个最符合当前状态的事件描述，并提供四个不同的应对方式（A、B、C、D）。\n" +
+                "使用诙谐有趣的语言，幽默地描述事件，参考以下 JSONL 文件内容的风格：\n" +
+                "%%s\n" +
+                "请严格按照以下格式输出：\n" +
+                "1. **事件**：{事件描述}\n" +
+                "2. **选项**：\n" +
+                "   - A. {选项 A}\n" +
+                "   - B. {选项 B}\n" +
+                "   - C. {选项 C}\n" +
+                "   - D. {选项 D}\n" +
+                "请选择一个选项（A、B、C 或 D），或者自由发挥（输入其他内容）。",
+                science, health, game, social, money
+            );
+        } else if (userInput.matches("[A-D]")) {
+            // 用户选择了选项 A、B、C 或 D
+            modifiedInput = String.format(
+                "你正在模拟“大学生活模拟器”。当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d\n" +
+                "用户选择了选项 %s。\n" +
+                "请先分析该选择对属性值（学习、健康、游戏、社交、金钱）的影响，并以以下格式输出属性修正：\n" +
+                "**属性值修正：**\n" +
+                "- {属性名} {+/-值}\n" +
+                "- {属性名} {+/-值}\n" +
+                "...\n" +
+                "然后，基于更新后的属性值，生成一个新的事件描述和四个新的应对方式（A、B、C、D）。\n" +
+                "请严格按照以下格式输出：\n" +
+                "**属性值修正：**\n" +
+                "- {属性名} {+/-值}\n" +
+                "- {属性名} {+/-值}\n" +
+                "...\n" +
+                "**新事件**：\n" +
+                "1. **事件**：{新事件描述}\n" +
+                "2. **选项**：\n" +
+                "   - A. {新选项 A}\n" +
+                "   - B. {新选项 B}\n" +
+                "   - C. {新选项 C}\n" +
+                "   - D. {新选项 D}\n" +
+                "请选择一个选项（A、B、C 或 D），或者自由发挥（输入其他内容）。",
+                science, health, game, social, money, userInput
+            );
+        } else {
+            // 用户自由发挥
+            modifiedInput = String.format(
+                "你正在模拟“大学生活模拟器”。当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d\n" +
+                "用户自由发挥：%s\n" +
+                "请先根据用户的回答分析对属性值（学习、健康、游戏、社交、金钱）的影响，并以以下格式输出属性修正：\n" +
+                "**属性值修正：**\n" +
+                "- {属性名} {+/-值}\n" +
+                "- {属性名} {+/-值}\n" +
+                "...\n" +
+                "然后，基于更新后的属性值，生成一个新的事件描述和四个新的应对方式（A、B、C、D）。\n" +
+                "请严格按照以下格式输出：\n" +
+                "**属性值修正：**\n" +
+                "- {属性名} {+/-值}\n" +
+                "- {属性名} {+/-值}\n" +
+                "...\n" +
+                "**新事件**：\n" +
+                "1. **事件**：{新事件描述}\n" +
+                "2. **选项**：\n" +
+                "   - A. {新选项 A}\n" +
+                "   - B. {新选项 B}\n" +
+                "   - C. {新选项 C}\n" +
+                "   - D. {新选项 D}\n" +
+                "请选择一个选项（A、B、C 或 D），或者自由发挥（输入其他内容）。",
+                science, health, game, social, money, userInput
+            );
+        }
+
+        // Call DashScope API
+        ApplicationParam param = ApplicationParam.builder()
+            .apiKey(apiKey)
+            .appId(appId)
+            .prompt(modifiedInput)
+            .ragOptions(RagOptions.builder().pipelineIds(List.of("file_b75bbb2b24244ab49424d7cca40e168f_11940386", "file_a291659172454c948a1f0aae6c591ad8_11940386", "file_5e20501991c2415494e7a454431f1204_11940386")).build())
+            .build();
+
+        Application application = new Application();
+        ApplicationResult result = application.call(param);
+        String aiReply = result.getOutput().getText();
+        System.out.println(aiReply);
+
+        // 更新存档（仅当用户选择或自由发挥时）
+        if (userInput != null && !userInput.trim().isEmpty()) {
+            updateArchiveFromReply(aiReply, archive);
+        }
+
+        // Prepare response
+        Map<String, Object> successResponse = new HashMap<>();
+        successResponse.put("reply", aiReply);
+
+        // Check for final chapter trigger
+        if (judge(archive)) {
+            archive.setArchiveSuccessFinish(1);
+            String finalChapterMessage = String.format(
+                "当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d\n" +
+                "根据目前的属性值，为用户预测一个大学的结局！\n" +
+                "规则：\n" +
+                "- 若某项属性值 > 90，安排一个非常好的结局（例如顶尖大学毕业、行业领袖）。\n" +
+                "- 若某项属性值 > 50，安排一个比较好的结局（例如顺利毕业、稳定工作）。\n" +
+                "- 若某项属性值 < 10，安排一个不太好的结局（例如辍学、经济困难）。\n" +
+                "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过200字符。",
+                science, health, game, social, money
             );
 
-            // Call DashScope API for regular response
-            ApplicationParam param = ApplicationParam.builder()
+            ApplicationParam finalChapterParam = ApplicationParam.builder()
                 .apiKey(apiKey)
                 .appId(appId)
-                .prompt(modifiedInput)
-                .ragOptions(RagOptions.builder().pipelineIds(List.of("file_b75bbb2b24244ab49424d7cca40e168f_11940386", "file_a291659172454c948a1f0aae6c591ad8_11940386", "file_5e20501991c2415494e7a454431f1204_11940386")).build())
+                .prompt(finalChapterMessage)
+                .ragOptions(RagOptions.builder().pipelineIds(List.of("file_a5509e2c1b434d66b343edc1cf2b0fbd_11940386")).build())
                 .build();
 
-            Application application = new Application();
-            ApplicationResult result = application.call(param);
-            String aiReply = result.getOutput().getText();
-            System.out.println(aiReply);
-            updateArchiveFromReply(aiReply, archive);
+            try {
+                Application finalChapterApplication = new Application();
+                ApplicationResult finalChapterResult = finalChapterApplication.call(finalChapterParam);
+                String finalChapterAiReply = finalChapterResult.getOutput().getText();
 
-            // Prepare response
-            Map<String, Object> successResponse = new HashMap<>();
-            successResponse.put("reply", aiReply);
-
-            // Check for final chapter trigger
-            if (judge(archive)) {
-                // Mark archive as complete
-                archive.setArchiveSuccessFinish(1);
-
-                // Construct final chapter prompt
-                String finalChapterMessage = String.format(
-                    "当前属性值：学习 %d, 健康 %d, 游戏 %d, 社交 %d, 金钱 %d\n" +
-                    "根据目前的属性值，为用户预测一个大学的结局！\n" +
-                    "规则：\n" +
-                    "- 若某项属性值 > 90，安排一个非常好的结局（例如顶尖大学毕业、行业领袖）。\n" +
-                    "- 若某项属性值 > 50，安排一个比较好的结局（例如顺利毕业、稳定工作）。\n" +
-                    "- 若某项属性值 < 10，安排一个不太好的结局（例如辍学、经济困难）。\n" +
-                    "- 综合考虑所有属性，生成一个详细的结局描述，长度不超过200字符。",
-                    science, health, game, social, money
-                );
-
-                // Call DashScope API for final chapter
-                ApplicationParam finalChapterParam = ApplicationParam.builder()
-                    .apiKey(apiKey)
-                    .appId(appId)
-                    .prompt(finalChapterMessage)
-                        .ragOptions(RagOptions.builder().pipelineIds(List.of("file_a5509e2c1b434d66b343edc1cf2b0fbd_11940386")).build())
-                    .build();
-
-                try {
-                    Application finalChapterApplication = new Application();
-                    ApplicationResult finalChapterResult = finalChapterApplication.call(finalChapterParam);
-                    String finalChapterAiReply = finalChapterResult.getOutput().getText();
-
-                    // Save final chapter outcome to archive
-                    archive.setFinalOutcome(finalChapterAiReply);
-
-                    // Save final chapter message and response to chat history
-                    ChatMessage finalChapterMessageRecord = new ChatMessage();
-                    finalChapterMessageRecord.setUserInput("触发大学结局预测");
-                    finalChapterMessageRecord.setAiResponse(finalChapterAiReply);
-                    finalChapterMessageRecord.setTimestamp(LocalDateTime.now());
-                    chatMessageRepository.save(finalChapterMessageRecord);
-                    successResponse.put("finalOutcome", finalChapterAiReply);
-                    return ResponseEntity.ok(successResponse);
-                } catch (ApiException | NoApiKeyException | InputRequiredException e) {
-                    // Log error but don't fail the entire request
-                    System.err.println("Final chapter API error: " + e.getMessage());
-                    successResponse.put("finalOutcomeError", "无法生成大学结局：" + e.getMessage());
-                    return ResponseEntity.ok(successResponse);
+                if (finalChapterAiReply.length() > 500) {
+                    finalChapterAiReply = finalChapterAiReply.substring(0, 500);
                 }
+                archive.setFinalOutcome(finalChapterAiReply);
+
+                ChatMessage finalChapterMessageRecord = new ChatMessage();
+                finalChapterMessageRecord.setUserInput("触发大学结局预测");
+                finalChapterMessageRecord.setAiResponse(finalChapterAiReply);
+                finalChapterMessageRecord.setTimestamp(LocalDateTime.now());
+                chatMessageRepository.save(finalChapterMessageRecord);
+                successResponse.put("finalOutcome", finalChapterAiReply);
+                return ResponseEntity.ok(successResponse);
+            } catch (Exception e) {
+                System.err.println("Final chapter API error: " + e.getMessage());
+                successResponse.put("finalOutcomeError", "无法生成大学结局：" + e.getMessage());
+                return ResponseEntity.ok(successResponse);
             }
-
-            // Save updated archive
-            archiveRepository.save(archive);
-
-            // Save regular message to chat history
-            ChatMessage message = new ChatMessage();
-            message.setUserInput(userInput);
-            message.setAiResponse(aiReply);
-            message.setTimestamp(LocalDateTime.now());
-            chatMessageRepository.save(message);
-
-            return ResponseEntity.ok(successResponse);
-        } catch (ApiException | NoApiKeyException | InputRequiredException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "DashScope API error: " + e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "服务器错误: " + e.getMessage());
-            return ResponseEntity.status(500).body(errorResponse);
         }
+
+        // Save updated archive
+        archiveRepository.save(archive);
+
+        // Save message to chat history
+        ChatMessage message = new ChatMessage();
+        message.setUserInput(userInput == null ? "生成事件" : userInput);
+        message.setAiResponse(aiReply);
+        message.setTimestamp(LocalDateTime.now());
+        chatMessageRepository.save(message);
+
+        return ResponseEntity.ok(successResponse);
+    } catch (Exception e) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("error", "服务器错误: " + e.getMessage());
+        return ResponseEntity.status(500).body(errorResponse);
     }
+}
 
     @PostMapping("/end")
     public ResponseEntity<?> endConversation() {
