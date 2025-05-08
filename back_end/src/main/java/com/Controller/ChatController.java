@@ -114,6 +114,7 @@ public class ChatController {
                     .apiKey(apiKey)
                     .appId(appId)
                     .prompt(finalChapterMessage)
+                        .ragOptions(RagOptions.builder().pipelineIds(List.of("file_a5509e2c1b434d66b343edc1cf2b0fbd_11940386")).build())
                     .build();
 
                 try {
@@ -205,6 +206,7 @@ public class ChatController {
                 .apiKey(apiKey)
                 .appId(appId)
                 .prompt(finalChapterMessage)
+                    .ragOptions(RagOptions.builder().pipelineIds(List.of("file_88565d1049c1490fbfd96eef72546fc2_11940386")).build())
                 .build();
 
             Application finalChapterApplication = new Application();
